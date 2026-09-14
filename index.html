@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SASP SOP — Field Reference</title>
+<style>
+  :root{
+    --navy-deep: #0c1420;
+    --navy: #121f33;
+    --navy-panel: #17263e;
+    --navy-line: #253a5c;
+    --gold: #c9a227;
+    --gold-dim: #8f7a3f;
+    --paper: #ece7d8;
+    --paper-dim: #a9b0bd;
+    --red: #b3402c;
+    --green: #4c8a5e;
+    --amber: #c98a27;
+    --blue-code: #3a5f96;
+    --purple: #6a4c93;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--navy-deep);
+    color:var(--paper);
+    font-family:'Iowan Old Style','Georgia',serif;
+    line-height:1.5;
+  }
+  .label-font{ font-family:'Helvetica Neue',Arial,sans-serif; letter-spacing:.04em; }
+
+  header{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    padding:22px 28px;
+    border-bottom:1px solid var(--navy-line);
+    background:linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%);
+    position:sticky;
+    top:0;
+    z-index:20;
+  }
+  .badge{
+    width:46px;height:46px;flex-shrink:0;
+    border:2px solid var(--gold);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--gold);
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-weight:700;
+    font-size:15px;
+  }
+  header h1{ font-size:20px; margin:0; font-weight:600; color:var(--paper); }
+  header p{ margin:2px 0 0; font-size:12.5px; color:var(--paper-dim); font-family:'Helvetica Neue',Arial,sans-serif; }
+
+  main{
+    max-width:1180px;
+    margin:0 auto;
+    padding:34px 28px 90px;
+  }
+  .group-title{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:12px;
+    letter-spacing:.09em;
+    text-transform:uppercase;
+    color:var(--gold-dim);
+    margin:34px 0 14px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--navy-line);
+  }
+  .group-title:first-of-type{margin-top:6px;}
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
+    gap:14px;
+  }
+  .card-btn{
+    all:unset;
+    cursor:pointer;
+    background:var(--navy-panel);
+    border:1px solid var(--navy-line);
+    border-radius:6px;
+    padding:18px 18px 16px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    min-height:118px;
+    transition:border-color .15s, transform .15s, background .15s;
+  }
+  .card-btn:hover{
+    border-color:var(--gold-dim);
+    background:#1b2c47;
+    transform:translateY(-2px);
+  }
+  .card-btn:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+  .card-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .card-num{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11px;
+    color:var(--gold-dim);
+  }
+  .card-tag{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:10px;
+    padding:2px 7px;
+    border-radius:9px;
+    background:rgba(201,162,39,.12);
+    color:var(--gold);
+  }
+  .card-btn h3{
+    margin:0;
+    font-size:16.5px;
+    color:var(--paper);
+    font-weight:600;
+    font-family:'Iowan Old Style','Georgia',serif;
+  }
+  .card-btn .teaser{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:12.5px;
+    color:var(--paper-dim);
+    line-height:1.4;
+  }
+
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(6,10,17,.72);
+    backdrop-filter:blur(2px);
+    display:none;
+    align-items:flex-start;
+    justify-content:center;
+    padding:5vh 18px;
+    z-index:100;
+    overflow-y:auto;
+  }
+  .overlay.open{display:flex; animation:fadeBg .15s ease;}
+  @keyframes fadeBg{from{opacity:0;} to{opacity:1;}}
+
+  .modal{
+    background:var(--navy);
+    border:1px solid var(--navy-line);
+    border-radius:8px;
+    width:100%;
+    max-width:840px;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);
+    animation:pop .18s ease;
+  }
+  @keyframes pop{from{opacity:0; transform:translateY(10px) scale(.98);} to{opacity:1; transform:translateY(0) scale(1);}}
+
+  .modal-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:20px;
+    padding:22px 26px 18px;
+    border-bottom:1px solid var(--navy-line);
+    position:sticky;
+    top:0;
+    background:var(--navy);
+    border-radius:8px 8px 0 0;
+  }
+  .modal-head .panel-eyebrow{margin-bottom:6px;}
+  .modal-head h2{ font-size:26px; margin:0; color:var(--paper); font-weight:600; }
+  .modal-close{
+    all:unset;
+    cursor:pointer;
+    width:32px;height:32px;
+    flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:50%;
+    color:var(--paper-dim);
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:18px;
+    border:1px solid var(--navy-line);
+  }
+  .modal-close:hover{ color:var(--paper); border-color:var(--gold-dim); background:var(--navy-panel); }
+  .modal-body{ padding:22px 26px 32px; }
+
+  .panel-eyebrow{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    color:var(--gold-dim);
+    font-size:12px;
+    letter-spacing:.08em;
+  }
+  h3{ font-size:17px; color:var(--gold); margin:26px 0 10px; font-weight:600; }
+  h3:first-child{margin-top:0;}
+
+  p{color:var(--paper); max-width:70ch;}
+  ul{padding-left:20px; margin:8px 0 18px;}
+  li{margin-bottom:7px; max-width:66ch;}
+  li::marker{color:var(--gold-dim);}
+
+  .callout{
+    background:var(--navy-panel);
+    border-left:3px solid var(--gold);
+    padding:14px 18px;
+    margin:16px 0;
+    border-radius:0 4px 4px 0;
+    font-size:14.5px;
+  }
+  .callout.warn{border-left-color:var(--red);}
+  .callout.warn strong{color:var(--red);}
+  .callout strong{color:var(--gold);}
+
+  .chip{
+    display:inline-block;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:.03em;
+    padding:2px 9px;
+    border-radius:10px;
+    color:#0c1420;
+  }
+  .chip.green{background:var(--green); color:#eef7ef;}
+  .chip.amber{background:var(--amber); color:#241a02;}
+  .chip.red{background:var(--red); color:#fbe9e5;}
+
+  table{ width:100%; border-collapse:collapse; margin:14px 0 22px; font-size:13.5px; font-family:'Helvetica Neue',Arial,sans-serif; }
+  th,td{ text-align:left; padding:9px 10px; border-bottom:1px solid var(--navy-line); vertical-align:top; }
+  th{ color:var(--gold-dim); font-weight:600; font-size:11.5px; letter-spacing:.04em; text-transform:uppercase; }
+  tr:hover td{background:rgba(201,162,39,0.04);}
+
+  .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+
+  .pyramid-mini{ display:flex; flex-direction:column; gap:3px; margin:16px 0 24px; max-width:520px; }
+  .pyr-row{ font-family:'Helvetica Neue',Arial,sans-serif; font-size:12.5px; padding:9px 14px; border-radius:3px; display:flex; justify-content:space-between; gap:12px; }
+  .pyr-row span.desc{color:rgba(0,0,0,.65); text-align:right;}
+  .pyr-1{background:#5a7a63; color:#eaf3ea; width:60%; align-self:center;}
+  .pyr-2{background:#7a8fae; color:#eef1f6; width:70%; align-self:center;}
+  .pyr-3{background:var(--amber); color:#241a02; width:82%; align-self:center;}
+  .pyr-4{background:var(--red); color:#fbe9e5; width:96%; align-self:center;}
+
+  .code-table{ width:100%; border-collapse:separate; border-spacing:0 4px; font-family:'Helvetica Neue',Arial,sans-serif; font-size:12.5px; }
+  .code-table td{ padding:6px 10px; border:none; }
+  .code-row{ background:var(--navy-panel); }
+  .code-badge{
+    display:inline-block;
+    min-width:56px;
+    text-align:center;
+    padding:3px 8px;
+    border-radius:4px;
+    font-weight:700;
+    font-size:11.5px;
+    color:#0c1420;
+  }
+  .code-b{background:var(--blue-code); color:#eaf0fb;}
+  .code-g{background:var(--green); color:#eef7ef;}
+  .code-r{background:var(--red); color:#fbe9e5;}
+  .code-cols{ display:grid; grid-template-columns:1fr 1fr; gap:0 22px; }
+  @media (max-width:640px){.code-cols{grid-template-columns:1fr;}}
+
+  .caselaw-card{
+    background:var(--navy-panel);
+    border:1px solid var(--navy-line);
+    border-left:3px solid var(--purple);
+    border-radius:0 6px 6px 0;
+    padding:14px 18px;
+    margin-bottom:12px;
+  }
+  .caselaw-card h4{
+    margin:0 0 6px;
+    color:var(--gold);
+    font-size:15px;
+    font-weight:600;
+  }
+  .caselaw-card p{ margin:0; font-size:13.5px; }
+  .caselaw-card a{ color:var(--gold); }
+
+  @media (max-width:760px){
+    main{padding:26px 16px 70px;}
+    .two-col{grid-template-columns:1fr;}
+    .modal{max-width:100%;}
+  }
+
+  footer{
+    text-align:center;
+    color:var(--paper-dim);
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11.5px;
+    padding:18px;
+    border-top:1px solid var(--navy-line);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">SASP</div>
+  <div>
+    <h1>San Andreas State Police — SOP Field Reference</h1>
+    <p>Tap a topic to open it · condensed from the full SOP document</p>
+  </div>
+</header>
+
+<main id="main"></main>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <div>
+        <div class="panel-eyebrow" id="modalEyebrow"></div>
+        <h2 id="modalTitle"></h2>
+      </div>
+      <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<footer>Condensed reference generated from "EchoRP – SASP Full SOPs.pdf" + roster codes &amp; case-law sheets · Always defer to the source documents for exact wording.</footer>
+
+<script>
+const groups = [
+  { title:"Conduct & Command", items:["intro","chain","discipline"] },
+  { title:"Field Operations", items:["pursuits","force","radio","traffic"] },
+  { title:"Enforcement & Custody", items:["crime","cleanup","gang","suspects","warrants"] },
+  { title:"Quick Reference", items:["codes","caselaw"] }
+];
+
+const sections = {
+  intro:{
+    title:"Introduction",
+    eyebrow:"Who we are",
+    teaser:"Candidate expectations, professionalism, off-duty rules.",
+    body:`
+      <h3>What's expected of a candidate</h3>
+      <ul>
+        <li><strong>Communication:</strong> speak factually (know case law, penal code, ten-codes), listen actively, and document everything clearly enough for a third party to follow.</li>
+        <li><strong>Empathy:</strong> view situations from both sides.</li>
+        <li><strong>Love of learning:</strong> show enthusiasm for training and the SOP itself.</li>
+      </ul>
+      <h3>On and off duty</h3>
+      <ul>
+        <li>Professionalism is expected at all times — on radio, with other officers, and off duty.</li>
+        <li>You may carry your PD-issued weapon off duty, but never your tac weapon.</li>
+        <li>A stolen off-duty weapon still must be reported, same as if lost on duty.</li>
+        <li>Committing a criminal offense off duty can mean termination without warning.</li>
+      </ul>
+    `
+  },
+  chain:{
+    title:"Chain of Command",
+    eyebrow:"Rank structure",
+    teaser:"Rank list and who handles what.",
+    body:`
+      <p>Always route questions to the lowest rank that can actually answer them. <strong>Corporal</strong> is the lowest supervisory rank.</p>
+      <table>
+        <tr><th>Rank</th><th>Role</th></tr>
+        <tr><td>Chief / Sheriff / Commissioner</td><td>Runs the department, executive decisions</td></tr>
+        <tr><td>Assistant Chief / Undersheriff</td><td>Executive decisions alongside command</td></tr>
+        <tr><td>Captain</td><td>Oversees officers, enforces regs, interviews & hiring</td></tr>
+        <tr><td>Lieutenant</td><td>Order, interviews, morale</td></tr>
+        <tr><td>Sergeant</td><td>Keeps lower ranks in order, ride-alongs, patrol oversight</td></tr>
+        <tr><td>Corporal</td><td>First supervisory rank — resource for lower ranks</td></tr>
+        <tr><td>Senior Officer / Senior Deputy</td><td>Resource for officers under supervision</td></tr>
+        <tr><td>Police Officer / Deputy</td><td>Active patrol, learning</td></tr>
+        <tr><td>Cadet</td><td>Rides only with FTOs until probation ends</td></tr>
+      </table>
+    `
+  },
+  pursuits:{
+    title:"Pursuits",
+    eyebrow:"Vehicle chases",
+    teaser:"PIT, PBS, spikes, swap-to-amber rules, pursuit codes.",
+    body:`
+      <h3>Hard rules</h3>
+      <ul>
+        <li><strong>Never</strong> enter a suspect's vehicle to stop them from evading — no exceptions.</li>
+        <li>If a civilian is hit during a chase, a unit <strong>must stay back</strong> and check on them.</li>
+        <li><strong>PIT:</strong> primary unit lightly taps the rear bumper. Never ram. Not allowed on bridges/overpasses. Not safe = don't do it (heavy traffic, gas stations, crowds).</li>
+        <li><strong>PBS (Pit / Box / Spike):</strong> approved by a Senior Officer+ after a good reason (extra suspects interfering, vehicle swap, or a chase running 15+ minutes).</li>
+        <li>Spikes only after PBS approval, never against large groups like a street race — communicate placement to avoid spiking your own units.</li>
+      </ul>
+      <h3>Code Amber vehicle swaps</h3>
+      <div class="callout"><strong>4 swaps = automatic Code Amber.</strong> Warn suspects before the amber swap when possible, but a missed warning doesn't delay the call.</div>
+      <table>
+        <tr><th>Swap</th><th>Vehicle</th><th>Action</th></tr>
+        <tr><td>—</td><td>Original vehicle</td><td>—</td></tr>
+        <tr><td>1st swap</td><td>Second car</td><td>—</td></tr>
+        <tr><td>2nd swap</td><td>Third car</td><td>Warn: next swap is amber</td></tr>
+        <tr><td>3rd swap</td><td>Fourth car</td><td><span class="chip amber">CODE AMBER / SHOOT TIRES</span></td></tr>
+      </table>
+      <p>Swapping back into a previously-used vehicle, or being dropped off and picked up again, still counts as a swap. So does loading items into a vehicle without getting in yourself.</p>
+      <h3>Special scenarios</h3>
+      <ul>
+        <li><strong>Foot chases:</strong> let them run a bit, don't instant-tackle. If they're running for a vehicle, tackle/tase before they reach it. Visible weapon → warn or use lethal force.</li>
+        <li><strong>Helicopter escape:</strong> immediate Code Amber. Shoot rear/main rotor before takeoff; once airborne, shoot the fuselage until it heavily smokes.</li>
+        <li><strong>Water escape:</strong> talk them out first; give a timespan before knocking them out to remove them.</li>
+      </ul>
+      <h3>Pursuit codes</h3>
+      <table>
+        <tr><th>Code</th><th>Meaning</th></tr>
+        <tr><td><span class="chip green">GREEN</span></td><td>Vehicle won't stop — pursuit is on. Keep a safe following distance.</td></tr>
+        <tr><td><span class="chip amber">AMBER</span></td><td>Senior Officer+ authorizes shooting the two rear tires. Automatic on a stolen emergency vehicle or spike strips used against one, or after the 3rd swap.</td></tr>
+        <tr><td><span class="chip red">RED</span></td><td>Violent suspect, all else exhausted, or mass violence — Sergeant+ calls it (unless the suspect attacks an officer directly, then any rank can call it and use lethal force). Final resort.</td></tr>
+      </table>
+    `
+  },
+  force:{
+    title:"Deadly Force",
+    eyebrow:"Use of force",
+    teaser:"Authorization, warning shots, moving vehicles, force triangle.",
+    body:`
+      <ul>
+        <li>Only a <strong>Sergeant+</strong> can authorize deadly force, unless the suspect is an immediate danger to someone's life.</li>
+        <li>Identify yourself and order the suspect to stop, with a <strong>verbal warning</strong> before deadly force — unless they've already fired on officers.</li>
+        <li>Only authorized to protect someone from an imminent threat of death or great bodily harm, when lesser force would be insufficient.</li>
+      </ul>
+      <div class="callout warn"><strong>Never</strong> use a shot as a warning shot.</div>
+      <h3>Shooting from a vehicle — avoid unless:</h3>
+      <ul>
+        <li>Fired upon from another vehicle while the suspect flees.</li>
+        <li>Vehicle is code-ambered and you can't safely exit to shoot a tire.</li>
+        <li>Immediate danger to officers or the public otherwise.</li>
+      </ul>
+      <h3>Shooting at a moving vehicle — only if:</h3>
+      <ul>
+        <li>Called Code Red by a supervisor.</li>
+        <li>A Code Red suspect gets in and flees.</li>
+        <li>Vehicle is deliberately trying to strike someone and other options are exhausted.</li>
+        <li>Its use would otherwise unreasonably risk officers/bystanders anyway.</li>
+      </ul>
+      <h3>Use of force triangle</h3>
+      <div class="pyramid-mini">
+        <div class="pyr-row pyr-4"><span class="tag">Deadly force</span><span class="desc">Firearm — reasonable belief of imminent death/serious injury</span></div>
+        <div class="pyr-row pyr-3"><span class="tag">Less-lethal</span><span class="desc">ECW, ASP/baton — physically aggressive behavior</span></div>
+        <div class="pyr-row pyr-2"><span class="tag">Moderate / limited</span><span class="desc">Control holds, OC spray — resisting, non-compliant</span></div>
+        <div class="pyr-row pyr-1"><span class="tag">No force</span><span class="desc">Verbal commands, presence — compliant subject</span></div>
+      </div>
+      <p style="font-size:13px;color:var(--paper-dim);">Rule of thumb: use the minimum force that neutralizes the immediate threat.</p>
+    `
+  },
+  radio:{
+    title:"Radio Communication",
+    eyebrow:"Comms",
+    teaser:"Channel assignments, 10-code use, Signal 100.",
+    body:`
+      <ul>
+        <li>Channels 1–100 are encrypted, government-only.</li>
+        <li><strong>Radio 1</strong> = regular PD patrol · <strong>Radio 5</strong> = DOC · <strong>Radio 90–99</strong> = EMS</li>
+        <li>Radio 16 (CID) and 20 (SAO) can't be used as TAC channels for calls.</li>
+        <li>Lead every transmission with your callsign; keep it short.</li>
+        <li>No general chatter on Radio 1 — switch TAC, use a phone, or talk in person.</li>
+        <li>10-codes are encouraged, not mandatory — clarity matters more.</li>
+        <li><strong>Signal 100</strong> = channel reserved for a specific incident; move other chatter elsewhere.</li>
+      </ul>
+    `
+  },
+  traffic:{
+    title:"Traffic Stops",
+    eyebrow:"Stops & tickets",
+    teaser:"Standard stop steps, Code 5 felony stop, license/plate rules.",
+    body:`
+      <h3>Standard stop — sequence</h3>
+      <ul>
+        <li>Call it in: callsign, location, heading, vehicle description, occupants, 77s/78s as needed. Run the plate first if possible.</li>
+        <li>Confirm engine off + window down (loudspeaker helps).</li>
+        <li>Identify yourself and the reason for the stop; show your badge.</li>
+        <li>No masks/face coverings; check for a valid license (unexpired, clear face, no group photo).</li>
+        <li>Document the ID with the person who presented it.</li>
+        <li>Return to your vehicle, look up info, write any tickets.</li>
+        <li>Explain next steps — citations can be appealed within <strong>14 days</strong>; unpaid fines auto-deduct as a No Contest plea.</li>
+      </ul>
+      <div class="callout warn">Only <strong>infractions</strong> get fines sent through the MDT. Never send misdemeanor or felony fines through the MDT.</div>
+      <h3>Felony / Code 5 stop</h3>
+      <ul>
+        <li>Request backup with the reason for the Code 5.</li>
+        <li>Arriving units position left and right of the initiating officer.</li>
+        <li>Suspect told to turn off vehicle; on countdown, all officers exit with doors open for cover, weapons drawn (taser ready if assigned). Watch your line of fire.</li>
+        <li>Occupants exit one at a time on the lead officer's clear instructions.</li>
+        <li>Once detained, two officers clear doors and trunk.</li>
+        <li>Proceed with the stop as normal.</li>
+      </ul>
+      <h3>Extra reminders</h3>
+      <ul>
+        <li>Stay respectful, explain the infraction.</li>
+        <li>A valid, physical driver's license is required to drive in San Andreas.</li>
+        <li>A visible plate is required — "no option for a plate" isn't a valid excuse.</li>
+      </ul>
+    `
+  },
+  crime:{
+    title:"Criminal Activities & Response",
+    eyebrow:"Call caps",
+    teaser:"Officer/unit limits and the full responding-unit allowance table.",
+    body:`
+      <ul>
+        <li><strong>10 officers max</strong> on any situation, with an exception for suspects swapping into 3+ cars at once (up to 2 cars per involved vehicle). Any call that turns into a shootout raises the cap to 10.</li>
+        <li><strong>Vangelico's, Pacific Standard, Paleto Bank, Gruppe Sechs:</strong> hostage demands can never deny Air-1, MOTO, or HEAT — those demands are always voided.</li>
+        <li><strong>Fleeca / Art Gallery:</strong> suspects can deny only one certification vehicle (e.g., no Air-1 <em>or</em> no MOTO, not both).</li>
+      </ul>
+      <h3>Counting officers & units</h3>
+      <ul>
+        <li>Every officer = 1. K9s and unarmed/civilian ride-alongs don't count toward the 10.</li>
+        <li>A unit = a vehicle, max 3 officers each. A MOTO "tandem" (2 bikes) = 1 unit.</li>
+        <li>Helicopters don't count as a unit, but the officers inside still count toward the officer cap.</li>
+        <li>Staying within limits is everyone's job, but ultimately falls on the highest-ranking officer on the call.</li>
+      </ul>
+      <h3>Responding unit allowances (by call type)</h3>
+      <table>
+        <tr><th>Crime</th><th>Units</th><th>Max Officers</th><th>Air-1</th><th>Moto</th><th>Interceptor</th></tr>
+        <tr><td>10-13A (not scene/cleanup)</td><td>Unlimited</td><td>Unlimited</td><td>Yes</td><td>N/A</td><td>Yes*</td></tr>
+        <tr><td>Shootout w/ officers (OIS)</td><td>10</td><td>10</td><td>Yes</td><td>N/A</td><td>Yes*</td></tr>
+        <tr><td>Gruppe Sechs (G6)</td><td>5</td><td>10†</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Pacific Standard / Paleto</td><td>5</td><td>10†</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Vangelico's</td><td>5</td><td>10†</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Bank Robbery / Art Gallery</td><td>4</td><td>10†</td><td>Yes</td><td>Yes</td><td>No (vehicle dep.)</td></tr>
+        <tr><td>Bank Truck</td><td>6</td><td>10 (2 shields max)</td><td>Yes</td><td>Yes</td><td>No</td></tr>
+        <tr><td>Store / Container Robbery</td><td>3</td><td>10†</td><td>No</td><td>No (vehicle dep.)</td><td>No</td></tr>
+        <tr><td>Vehicle Boost: Class X</td><td>3</td><td>10†</td><td>Yes</td><td>Yes (max 2 MEAT, bikes)</td><td>Yes (max 2 HEAT)</td></tr>
+        <tr><td>Vehicle Boost: Class S</td><td>3</td><td>10†</td><td>Yes</td><td>Yes (max 2 MEAT, bikes)</td><td>Yes (max 1 HEAT)</td></tr>
+        <tr><td>Vehicle Boost: Class D/C/B/A</td><td>3</td><td>10†</td><td>No</td><td>No (unless bike)</td><td>No</td></tr>
+        <tr><td>Prison Transport (10-86)</td><td>7</td><td>15 (incl. DOC w/ lethals)</td><td>Yes</td><td>No</td><td>No</td></tr>
+        <tr><td>Any unlisted call</td><td>3</td><td>10†</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+      </table>
+      <p style="font-size:12.5px;color:var(--paper-dim);">* if already in HEAT · † rises to 10 automatically if the call becomes a shootout</p>
+    `
+  },
+  cleanup:{
+    title:"Cleanup Protocol",
+    eyebrow:"Mass-casualty scenes",
+    teaser:"The 60-second timer after all officers are down, then triage.",
+    body:`
+      <ul>
+        <li>Triggered when all 10 officers on a scene are incapacitated. Cleanup can stage early on a separate call/radio, staying clear until needed.</li>
+        <li>Once the last original officer goes down (13A), a <strong>60-second timer</strong> starts — ideally announced by an air unit's loudspeaker — telling suspects to grab their people and leave before cleanup moves in, and warning them not to rob officers.</li>
+        <li>Anyone caught robbing officers during or after the timer gets fired upon by cleanup, regardless of the timer status.</li>
+        <li>If suspects are still on scene after 60 seconds and not leaving/still robbing, a <strong>Sergeant</strong> can call Code Red (or the highest officer present if no sergeant is available).</li>
+      </ul>
+      <h3>Once the scene is Code 4</h3>
+      <ul>
+        <li>First priority: triage downed officers — stop bleeding, check breathing/heart rate, wait for EMS.</li>
+        <li>Once stable, a small group detaches to collect evidence: shell casings, blood samples, document leftover vehicles.</li>
+        <li>All evidence goes into an <strong>evidence report</strong> forwarded to CID ASAP.</li>
+      </ul>
+    `
+  },
+  gang:{
+    title:"Gang Activity Response",
+    eyebrow:"Gang fights & blocks",
+    teaser:"Fight timers by location, robbing rule, gang block push cap.",
+    body:`
+      <h3>Gang fights</h3>
+      <ul>
+        <li><strong>Outside the Southside:</strong> stop it fast — once a perimeter is up, give both sides a <strong>2-minute</strong> warning (air unit loudspeaker preferred) before PD moves in. Still fighting after that → a supervisor can Code Red the shooter(s).</li>
+        <li><strong>Inside the Southside:</strong> more leniency — a <strong>15-minute</strong> window from the first warning before units move in and Code Red shooters (once cleared by a supervisor).</li>
+        <li>Both sides are told not to rob — looting after the warning gets suspects fired on regardless of the timer. A Sergeant can Code Red a specific suspect caught robbing a downed suspect, even their own gang member.</li>
+        <li>Response cap: <strong>10 officers per gang involved</strong>, rising to 10 if officers join the shootout. If the chase splits, try to run it as two separate calls.</li>
+        <li>Primary objective is rendering aid — stay on scene for downed suspects/evidence; chase evaders only if units can be spared.</li>
+        <li><strong>All gang members are arrested</strong> from a gang fight, chased or not. Catch-and-release only applies if a detained member is both GSR-negative <em>and</em> has no illegal possessions — never released just for losing a fight (reductions can be offered instead if you feel for them).</li>
+      </ul>
+      <h3>Gang blocks</h3>
+      <p>Gangs don't legally own their turf — you can tell them to leave — but expect it to aggravate them, so stay vigilant. Pushing a block with more than <strong>5 suspects</strong> allows up to <strong>20 officers</strong> on the call.</p>
+    `
+  },
+  suspects:{
+    title:"Suspect Interactions",
+    eyebrow:"Stops, rights & arrests",
+    teaser:"Reasonable suspicion, probable cause, full arrest checklist.",
+    body:`
+      <div class="two-col">
+        <div>
+          <h3>Reasonable Suspicion</h3>
+          <p>Specific facts or circumstances — more than a hunch — that justify stopping and questioning someone, and a Terry frisk for weapons if justified. Feeling something that could be a weapon → probable cause for a search. Allows detain + question.</p>
+        </div>
+        <div>
+          <h3>Probable Cause</h3>
+          <p>Facts/circumstances that would lead a reasonable person to believe a crime was, is, or is about to be committed — e.g. contraband in plain view/smell, or an admission of guilt. Minor traffic violations alone are <strong>not</strong> probable cause to search. Required for search & seizure or arrest.</p>
+        </div>
+      </div>
+      <h3>Detention vs. arrest</h3>
+      <ul>
+        <li><strong>Detention:</strong> temporarily not free to leave, clearly communicated — cuffs not required, but the person must follow lawful commands (e.g. a traffic stop).</li>
+        <li><strong>Arrest:</strong> taken into custody, charges formally being placed.</li>
+      </ul>
+      <h3>A suspect's rights</h3>
+      <ul>
+        <li>Check for injury first and offer medical help — injuries in custody are a liability that falls on the officer.</li>
+        <li>Read Miranda Rights once health is confirmed; the suspect must confirm they understand.</li>
+        <li>Always offer an attorney and note their answer; make sure they don't need food/water.</li>
+        <li>Right to speedy processing — get charges filed and a plea taken before writing reports.</li>
+      </ul>
+      <h3>Arrest checklist (suspect already cuffed)</h3>
+      <ul>
+        <li>Make sure they're not dying — patch bleeding, call EMS if needed.</li>
+        <li>Search + photograph pockets/bags, weapon serials, ID cards.</li>
+        <li>Hospital if needed → read Miranda rights → transport to station, offer a lawyer.</li>
+        <li>Confirm fingerprints/MDT photo are current (update if not); DNA on file for violent felonies.</li>
+        <li>Search again — no phones, radios, weapons, drugs, alcohol, spraycans, lockpicks, spy cameras, lighters, mics, jukeboxes, or other illegal items.</li>
+        <li>Lock in holding cell, uncuff through the bars.</li>
+        <li>Write the report with charges + photos; pull any felony weapon license if applicable.</li>
+        <li>Negotiate with a lawyer if present/requested — no reductions for government-issued item/police weapon possession charges (Class 1–3), even with a lawyer.</li>
+        <li>After plea: fine + send to jail (check DOC availability; remove masks/gang identifiers first).</li>
+        <li>Evidence → evidence locker (non-returnable). Confiscated-but-returnable items → suspect's Confiscation locker (needs CID). Phone/radio/lighter can be returned before transport if going "locally."</li>
+        <li>Write the full report, attach evidence and photos → back <strong>10-8</strong>.</li>
+      </ul>
+      <h3>Community service</h3>
+      <ul>
+        <li>Can replace sentencing hours for nonviolent felonies/misdemeanors, negotiated with a lawyer or set by the arresting officer/command.</li>
+        <li>Tasks = months that would've been served × <strong>1.5</strong> or <strong>2</strong> (e.g. 10 months → 15 or 20 tasks).</li>
+        <li>Approved locations: Legion Park, Las Lagunas Park, Recreation Center (Forum Dr), Courthouse (Rockford Hills), Sandy Shores Marina, Dignity Village (Paleto).</li>
+        <li>Via the Police utility belt → Community Service → select location → set task count; return confiscated items and release once complete.</li>
+      </ul>
+      <h3>Reductions & time served</h3>
+      <div class="callout">Use the <strong>Penal Code</strong> for sentencing reference. Always ask if a lawyer is wanted (check yellow pages / DOJ app / services app).</div>
+      <ul>
+        <li>Up to <strong>20%</strong> fine reduction: Supervisor+ (must have exhausted efforts to get a lawyer).</li>
+        <li>Up to <strong>30%</strong>: Command+ (same requirement).</li>
+        <li><strong>40% is the absolute max</strong>, even with a lawyer present — reductions are a privilege, not a right.</li>
+        <li>Government-issued item / police weapon possession charges: never eligible for reduction.</li>
+        <li><strong>Time served is mandatory</strong>, not a reduction — PD-caused delays get added to it; only the suspect's own fault (e.g. being unresponsive) is exempt.</li>
+      </ul>
+    `
+  },
+  warrants:{
+    title:"Warrants & BOLOs",
+    eyebrow:"Flags",
+    teaser:"How to issue, approve, and serve a warrant or BOLO.",
+    body:`
+      <h3>Warrants</h3>
+      <ul>
+        <li>Used to arrest someone not currently present. Requires positive ID + probable cause.</li>
+        <li>Write the report and attach charges as if arresting, but mark it as a warrant. Only for felony or capital charges.</li>
+        <li>Approved by a Sergeant+ or a State's Attorney's Office member, who logs their name, callsign, and date/time.</li>
+        <li>Be extra detailed — you likely won't be there for processing, and someone else needs to fully understand the charges.</li>
+        <li>When served: the finding officer runs a normal arrest, plus an incident report for the scene they found them on (if needed), <em>and</em> serves the warrant charges separately. Pleading/negotiating is handled separately per report, but time/fine combine.</li>
+        <li>After serving, mark the warrant "served" with your name, callsign, date/time.</li>
+      </ul>
+      <h3>BOLOs</h3>
+      <ul>
+        <li>"Be On the Look Out" — flags a vehicle; your radar auto-recognizes active BOLOs.</li>
+        <li>Used for vehicles fleeing cops or otherwise sought for a crime.</li>
+        <li>Report needs enough detail that someone with zero context on the original scene could still gather evidence.</li>
+        <li>Anyone in SASP can issue one, no approval needed — but the issuer is responsible for keeping it current and disabling it when it's no longer needed.</li>
+      </ul>
+    `
+  },
+  discipline:{
+    title:"Disciplinary Actions",
+    eyebrow:"Accountability",
+    teaser:"Strike escalation, expungement timeline, at-will status.",
+    body:`
+      <ul>
+        <li>Grounds include unprofessional conduct, SOP violations, insubordination, or failing basic duties.</li>
+        <li><strong>Corporal+</strong> can send someone off duty for 24 hours and issue verbal/written warnings.</li>
+        <li><strong>Sergeant+</strong> can issue strikes and suspensions.</li>
+      </ul>
+      <h3>Strike escalation</h3>
+      <ol style="padding-left:20px;">
+        <li>No extra restrictions</li>
+        <li>Can't earn new certifications, transfer departments, or be promoted</li>
+        <li>All earned certifications held (including TAC-cert)</li>
+        <li>Potential suspension and/or demotion</li>
+        <li>Termination</li>
+      </ol>
+      <div class="callout">Strikes expunge <strong>30 days</strong> after issuance via a command member — but a new strike before expungement resets the 30-day timer and keeps everything active.</div>
+      <ul>
+        <li>LOA requests go through the form in LEO Documents (SASP emails).</li>
+        <li>SASP is an <strong>at-will employer</strong> — termination can happen anytime, without cause, as long as it isn't sexually, racially, or religiously motivated.</li>
+      </ul>
+    `
+  },
+  codes:{
+    title:"10-Codes & Signals",
+    eyebrow:"Roster reference",
+    teaser:"Full radio code sheet — 10-codes, Code 0–10, Signals 99/100, Miranda.",
+    body:`
+      <p style="font-size:12.5px;color:var(--paper-dim);">
+        <span class="code-badge code-b">BLUE</span> general/informational &nbsp;
+        <span class="code-badge code-g">GREEN</span> status/routine &nbsp;
+        <span class="code-badge code-r">RED</span> urgent/emergency
+      </p>
+
+      <h3>10-Codes</h3>
+      <div class="code-cols">
+        <table class="code-table">
+          <tr class="code-row"><td><span class="code-badge code-b">10-1</span></td><td>Frequency Change</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-2</span></td><td>Signal Good</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-r">10-3</span></td><td>Stop Transmitting</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-4</span></td><td>Affirmative</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-5</span></td><td>Relay Message</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-6</span></td><td>Busy Unless Urgent</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-7</span></td><td>Out of Service, Unavailable</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-8</span></td><td>In Service, Available</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-9</span></td><td>Repeat Last Transmission</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-10</span></td><td>Fight in Progress</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-11</span></td><td>Routine Traffic Stop</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-12</span></td><td>Ride Along</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-r">10-13A</span></td><td>Officer Down / URGENT</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-r">10-13B</span></td><td>Officer Down / Not Urgent</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-r">10-14A</span></td><td>Medic Down / URGENT</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-r">10-14B</span></td><td>Medic Down / Not Urgent</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-15</span></td><td>Suspicious Activity</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-16</span></td><td>Domestic Problem</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-19</span></td><td>Return to ___</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-20</span></td><td>Location</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-22</span></td><td>Disregard</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-23</span></td><td>On Scene</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-25</span></td><td>Report To</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-27</span></td><td>Driver's License Information</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-28</span></td><td>Vehicle Registration</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-29</span></td><td>Check for Warrants</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-30</span></td><td>Wanted Person</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-32</span></td><td>ATM Robbery</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-33</span></td><td>Breaking and Entering</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-34</span></td><td>Riot</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-37</span></td><td>Investigate Suspicious Vehicle</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-38</span></td><td>Stopping Suspicious Vehicle</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-41</span></td><td>Beginning Tour of Duty</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-42</span></td><td>Ending Tour of Duty</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-r">10-43</span></td><td>Hospital Lockdown</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-44</span></td><td>Brandishing</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-45</span></td><td>Trespassing</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-46</span></td><td>Assist Motorist</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-47</span></td><td>Emergency Road Repair</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-48A</span></td><td>Fishing in Unauthorized Area</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-48B</span></td><td>Hunting in Unauthorized Area</td></tr>
+        </table>
+        <table class="code-table">
+          <tr class="code-row"><td><span class="code-badge code-g">10-49A</span></td><td>Suspicious Fishing Activity</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-49B</span></td><td>Suspicious Hunting Activity</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-49C</span></td><td>Suspicious Network Activity</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-50</span></td><td>Vehicle Accident (Fatal / Non-Fatal / Damage)</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-51</span></td><td>Request for Tow</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-52</span></td><td>Request for Fire / Ambulance</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-53</span></td><td>Road Block at ___</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-54</span></td><td>Livestock on Public Road <span style="opacity:.7">(10-Jade, Apr 25 2026 only)</span></td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-55</span></td><td>Suspected DUI</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-56</span></td><td>Intoxicated Driver</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-57</span></td><td>Hit and Run</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-58</span></td><td>Direct Traffic</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-59</span></td><td>Convoy / Escort</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-60</span></td><td>Gunshots</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-r">10-61</span></td><td>Gang Fight</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-62</span></td><td>Hunting/Fishing with Suspicious Vehicle</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-69</span></td><td>Drug Trafficking</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-75</span></td><td>In Contact With ___</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-76</span></td><td>Enroute</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-77</span></td><td>Need Additional Unit – Not Urgent</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-78</span></td><td>Need Additional Unit – URGENT</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-79</span></td><td>Notify Coroner</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-80</span></td><td>Pursuit of Vehicle / Pursuit on Foot</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-81</span></td><td>Vehicle Theft</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-82</span></td><td>Explosion</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-r">10-86</span></td><td>High Risk Prison Transport</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-89</span></td><td>Bomb Threat</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-90</span></td><td>Robbery</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-91</span></td><td>Pick Up Prisoner</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-93</span></td><td>Blockade</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-94</span></td><td>Drag Racing</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-95</span></td><td>Suspect in Custody</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-b">10-97</span></td><td>Test Signal</td></tr>
+          <tr class="code-row"><td><span class="code-badge code-g">10-98</span></td><td>Jail Break</td></tr>
+        </table>
+      </div>
+
+      <h3>Code 0–10 & Signals</h3>
+      <table class="code-table">
+        <tr class="code-row"><td><span class="code-badge code-r">CODE 0</span></td><td>Game Crash / Disconnected</td></tr>
+        <tr class="code-row"><td><span class="code-badge code-r">CODE 1</span></td><td>No Lights or Sirens</td></tr>
+        <tr class="code-row"><td><span class="code-badge code-r">CODE 2</span></td><td>Use Lights, No Sirens</td></tr>
+        <tr class="code-row"><td><span class="code-badge code-r">CODE 3</span></td><td>Use Lights and Sirens</td></tr>
+        <tr class="code-row"><td><span class="code-badge code-r">CODE 4</span></td><td>Scene is Clear</td></tr>
+        <tr class="code-row"><td><span class="code-badge code-r">CODE 5</span></td><td>Felony Traffic Stop</td></tr>
+        <tr class="code-row"><td><span class="code-badge code-r">CODE 6</span></td><td>Investigating the Area</td></tr>
+        <tr class="code-row"><td><span class="code-badge code-r">CODE 7</span></td><td>Standard Traffic Stop</td></tr>
+        <tr class="code-row"><td><span class="code-badge code-r">CODE 8</span></td><td>AFK</td></tr>
+        <tr class="code-row"><td><span class="code-badge code-r">CODE 10</span></td><td>Transporting Subject(s)</td></tr>
+        <tr class="code-row"><td><span class="code-badge code-r">SIGNAL 99</span></td><td>Emergency</td></tr>
+        <tr class="code-row"><td><span class="code-badge code-r">SIGNAL 100</span></td><td>Priority Comms Only</td></tr>
+      </table>
+
+      <h3>Miranda Rights</h3>
+      <div class="callout">
+        "You have the right to remain silent. Anything you say or do can and will be used against you in the court of law. You have the right to an attorney. If you cannot afford one, one will be appointed to you by the state if there is one available. Do you understand these rights as I have read them to you?"
+        <br><br><strong>Requires a verbal confirmation from the suspect.</strong>
+      </div>
+    `
+  },
+  caselaw:{
+    title:"Case Law",
+    eyebrow:"Legal reference",
+    teaser:"The key precedents behind stops, searches, and Miranda.",
+    body:`
+      <div class="caselaw-card">
+        <h4>Tennessee v. Garner, 471 U.S. 1 (1985)</h4>
+        <p>Deadly force to stop a fleeing felon is only justified if necessary to prevent the escape and the officer has probable cause to believe the suspect poses a significant threat of death or serious physical injury to the officer or others.</p>
+      </div>
+      <div class="caselaw-card">
+        <h4>Terry v. Ohio, 392 U.S. 1 (1968)</h4>
+        <p>An officer can briefly detain someone based on reasonable suspicion of criminal activity, long enough to dispel the suspicion or let it rise to probable cause for arrest, and may do a limited "frisk" for weapons without a warrant. To frisk, the officer must have articulable facts the person could be armed, limit the search to patting outer garments for weapon-like objects, and only reach inside clothing after feeling such an object.</p>
+      </div>
+      <div class="caselaw-card">
+        <h4>Wyoming v. Houghton, 526 U.S. 295 (1999)</h4>
+        <p>Absent exigency, a warrantless search of a passenger's container capable of holding the object of a search doesn't violate the Fourth Amendment when justified under the automobile exception.</p>
+      </div>
+      <div class="caselaw-card">
+        <h4>Miranda v. Arizona, 384 U.S. 436 (1966)</h4>
+        <p>A statement made during custodial interrogation is presumed involuntary without Miranda warnings. "Custody" means an arrest or equivalent deprivation of freedom; "interrogation" means words or actions meant to elicit an incriminating response.</p>
+      </div>
+      <div class="caselaw-card">
+        <h4>Carroll v. U.S., 267 U.S. 132 (1925)</h4>
+        <p>Police may conduct a warrantless search of a vehicle stopped in traffic if there's probable cause to believe it contains contraband or evidence.</p>
+      </div>
+      <div class="caselaw-card">
+        <h4>Pennsylvania v. Mimms, 434 U.S. 106 (1977)</h4>
+        <p>Ordering a person out of a car following a traffic stop does not violate the Fourth Amendment. A pat-down still requires reasonable suspicion the person is armed and dangerous (per Terry v. Ohio).</p>
+      </div>
+      <div class="caselaw-card">
+        <h4>Maryland v. King, 569 U.S. 435 (2013)</h4>
+        <p>A cheek swab of an arrestee's DNA is comparable to fingerprinting — a reasonable, legal booking procedure under the Fourth Amendment, but only when charging the arrestee with a <span style="color:var(--red);">violent</span> crime.</p>
+      </div>
+      <div class="caselaw-card">
+        <h4>De-Luca v. State of San Andreas (2023)</h4>
+        <p>San Andreas has no express "delayed death" exception, but the court recognizes its necessity. Because Los Santos arraignments often happen minutes after arrest, followed immediately by pleas, the court acknowledges a "delayed death" exception to double jeopardy to safeguard due process.</p>
+      </div>
+      <div class="caselaw-card">
+        <h4>Brady v. Maryland (1963)</h4>
+        <p>Withholding evidence material to guilt or punishment violates a defendant's constitutional right to due process.</p>
+        <p style="margin-top:8px;"><a href="https://drive.google.com/file/d/1yVAa9JDWNShDNCOg_WH1ZH2ioslaTpPq/view" target="_blank" rel="noopener">More info →</a></p>
+      </div>
+    `
+  }
+};
+
+const main = document.getElementById('main');
+groups.forEach(group => {
+  const h = document.createElement('div');
+  h.className = 'group-title';
+  h.textContent = group.title;
+  main.appendChild(h);
+
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+  group.items.forEach((id) => {
+    const s = sections[id];
+    const btn = document.createElement('button');
+    btn.className = 'card-btn';
+    btn.innerHTML = `
+      <div class="card-top">
+        <span class="card-num">${id.toUpperCase()}</span>
+        <span class="card-tag">${s.eyebrow}</span>
+      </div>
+      <h3>${s.title}</h3>
+      <div class="teaser">${s.teaser}</div>
+    `;
+    btn.addEventListener('click', () => openModal(id));
+    grid.appendChild(btn);
+  });
+  main.appendChild(grid);
+});
+
+const overlay = document.getElementById('overlay');
+const modalTitle = document.getElementById('modalTitle');
+const modalEyebrow = document.getElementById('modalEyebrow');
+const modalBody = document.getElementById('modalBody');
+const modalClose = document.getElementById('modalClose');
+
+function openModal(id){
+  const s = sections[id];
+  modalEyebrow.textContent = s.eyebrow;
+  modalTitle.textContent = s.title;
+  modalBody.innerHTML = s.body;
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  modalClose.focus();
+}
+function closeModal(){
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+modalClose.addEventListener('click', closeModal);
+overlay.addEventListener('click', e => { if(e.target === overlay) closeModal(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
+</script>
+
+</body>
+</html>
