@@ -280,6 +280,49 @@
   }
   @media (max-width:640px){.callout-grid{grid-template-columns:1fr;}}
 
+  .quiz-progress{ font-family:'Helvetica Neue',Arial,sans-serif; font-size:12px; color:var(--gold-dim); margin-bottom:12px; letter-spacing:.03em; }
+  .quiz-prompt{ font-size:17px; margin-bottom:14px; color:var(--paper); font-weight:600; }
+  .quiz-hint-btn{
+    all:unset; cursor:pointer;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:12px; color:var(--paper-dim);
+    text-decoration:underline;
+    margin-bottom:12px; display:inline-block;
+  }
+  .quiz-hint-btn:hover{color:var(--gold);}
+  .quiz-hint-text{ font-size:12.5px; color:var(--paper-dim); margin:-4px 0 14px; font-family:'Helvetica Neue',Arial,sans-serif; }
+  .quiz-option{
+    all:unset; cursor:pointer; display:block; width:100%;
+    box-sizing:border-box;
+    padding:11px 15px; margin-bottom:8px;
+    border:1px solid var(--navy-line); border-radius:6px;
+    background:var(--navy-panel); color:var(--paper);
+    font-family:'Helvetica Neue',Arial,sans-serif; font-size:13.5px;
+    transition:border-color .12s, background .12s;
+  }
+  .quiz-option:hover:not(.disabled){ border-color:var(--gold-dim); }
+  .quiz-option.correct{ border-color:var(--green); background:rgba(76,138,94,.15); }
+  .quiz-option.incorrect{ border-color:var(--red); background:rgba(179,64,44,.15); }
+  .quiz-option.disabled{ cursor:default; }
+  .quiz-feedback{
+    margin-top:6px; padding:13px 16px; border-radius:0 6px 6px 0;
+    background:var(--navy-panel); border-left:3px solid var(--green);
+    font-size:13.5px;
+  }
+  .quiz-feedback.wrong{ border-left-color:var(--red); }
+  .quiz-feedback strong{ color:var(--gold); display:block; margin-bottom:3px; }
+  .quiz-nav{ display:flex; justify-content:flex-end; margin-top:18px; }
+  .quiz-btn{
+    all:unset; cursor:pointer;
+    background:var(--gold); color:#0c1420;
+    font-family:'Helvetica Neue',Arial,sans-serif; font-weight:700; font-size:13px;
+    padding:10px 20px; border-radius:5px;
+  }
+  .quiz-btn:hover{ opacity:.88; }
+  .quiz-score{ text-align:center; padding:34px 10px 12px; }
+  .quiz-score .big{ font-size:46px; color:var(--gold); font-weight:700; font-family:'Helvetica Neue',Arial,sans-serif; }
+  .quiz-score p{ max-width:100%; }
+
   .caselaw-card{
     background:var(--navy-panel);
     border:1px solid var(--navy-line);
@@ -345,7 +388,8 @@ const groups = [
   { title:"Conduct & Command", items:["intro","chain","discipline"] },
   { title:"Field Operations", items:["pursuits","force","radio","traffic"] },
   { title:"Enforcement & Custody", items:["crime","cleanup","gang","suspects","warrants"] },
-  { title:"Quick Reference", items:["codes","caselaw"] }
+  { title:"Quick Reference", items:["codes","caselaw"] },
+  { title:"Practice", items:["quizUnits","quizSituations"] }
 ];
 
 const sections = {
@@ -857,6 +901,18 @@ const sections = {
         <p style="margin-top:8px;"><a href="https://drive.google.com/file/d/1yVAa9JDWNShDNCOg_WH1ZH2ioslaTpPq/view" target="_blank" rel="noopener">More info →</a></p>
       </div>
     `
+  },
+  quizUnits:{
+    title:"Unit Numbers",
+    eyebrow:"Practice quiz",
+    teaser:"10 questions on officer/unit counting rules and response caps.",
+    isQuiz:true
+  },
+  quizSituations:{
+    title:"Situations",
+    eyebrow:"Practice quiz",
+    teaser:"10 questions on 10-code situations — what each one means.",
+    isQuiz:true
   }
 };
 
@@ -897,7 +953,12 @@ function openModal(id){
   const s = sections[id];
   modalEyebrow.textContent = s.eyebrow;
   modalTitle.textContent = s.title;
-  modalBody.innerHTML = s.body;
+  if(s.isQuiz){
+    quizState = {quizId:id, index:0, score:0, answered:false};
+    renderQuizQuestion();
+  } else {
+    modalBody.innerHTML = s.body;
+  }
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
   modalClose.focus();
@@ -909,6 +970,170 @@ function closeModal(){
 modalClose.addEventListener('click', closeModal);
 overlay.addEventListener('click', e => { if(e.target === overlay) closeModal(); });
 document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
+
+/* ===== Quiz: Unit Numbers & Situations ===== */
+const quizQuestions = [
+  { prompt:"What's the standard maximum number of officers that can respond to any situation?",
+    options:[{id:"a",text:"5"},{id:"b",text:"10"},{id:"c",text:"15"},{id:"d",text:"20"}],
+    correct:"b",
+    hint:"It's the same number used as the baseline cap across almost every call type in the response table.",
+    explanation:"10 officers is the standard max, with exceptions like the 3+ car swap rule, gang fights (10 per gang), and gang block pushes (20 with 5+ suspects).",
+    correctFeedback:"Locked in.", incorrectFeedback:"Close, but no." },
+  { prompt:"How is a 'unit' defined for counting purposes?",
+    options:[{id:"a",text:"Any officer on the call"},{id:"b",text:"A vehicle, max 3 officers each"},{id:"c",text:"A pair of officers, regardless of vehicle"},{id:"d",text:"Any vehicle, unlimited officers"}],
+    correct:"b",
+    hint:"It's about the vehicle, not the people in it.",
+    explanation:"A unit is a vehicle, and every vehicle can carry a maximum of 3 officers.",
+    correctFeedback:"Correct.", incorrectFeedback:"Not quite." },
+  { prompt:"Two MOTO bikes riding as a 'tandem' count as how many units?",
+    options:[{id:"a",text:"0.5"},{id:"b",text:"1"},{id:"c",text:"2"},{id:"d",text:"3"}],
+    correct:"b",
+    hint:"The tandem is treated as a single package on the radio, not two separate vehicles.",
+    explanation:"A MOTO 'tandem' — 2 bikes — counts as just 1 unit.",
+    correctFeedback:"Yep.", incorrectFeedback:"Not this one." },
+  { prompt:"A helicopter with 2 officers aboard responds to a call. How does that count against the limits?",
+    options:[{id:"a",text:"Counts as 1 unit, 2 officers"},{id:"b",text:"Doesn't count as a unit, but the 2 officers count toward the officer cap"},{id:"c",text:"Doesn't count toward either limit"},{id:"d",text:"Counts as 1 unit, officers don't count"}],
+    correct:"b",
+    hint:"Think about what's tracked separately: the airframe itself vs. the people in it.",
+    explanation:"Helicopters don't count toward the unit count, but the officers inside still count toward the max officer count.",
+    correctFeedback:"Exactly right.", incorrectFeedback:"Not quite — check what counts vs. what doesn't." },
+  { prompt:"Which of these does NOT count toward the 10-officer max?",
+    options:[{id:"a",text:"A K9 or unarmed civilian ride-along"},{id:"b",text:"An officer riding in a helicopter"},{id:"c",text:"An officer on a MOTO bike"},{id:"d",text:"An officer in a ground vehicle"}],
+    correct:"a",
+    hint:"This one isn't a sworn officer with a badge.",
+    explanation:"Every officer counts as 1, but K9s and unarmed/civilian ride-alongs do not count toward the 10-officer maximum.",
+    correctFeedback:"That's the one.", incorrectFeedback:"Try again." },
+  { prompt:"A gang fight breaks out with two gangs involved. What's the base officer allowance?",
+    options:[{id:"a",text:"10 total, split between both gangs"},{id:"b",text:"10 officers per gang involved"},{id:"c",text:"5 officers per gang involved"},{id:"d",text:"20 officers total, no matter how many gangs"}],
+    correct:"b",
+    hint:"It scales with the number of gangs, not a flat total.",
+    explanation:"A gang fight may have a response of 10 officers per gang involved, rising to 10 total if officers themselves become involved in the shootout.",
+    correctFeedback:"Correct.", incorrectFeedback:"Not quite." },
+  { prompt:"Officers are forced to 'push' a gang block that has more than 5 suspects present. How many officers are allowed on that call?",
+    options:[{id:"a",text:"10"},{id:"b",text:"15"},{id:"c",text:"20"},{id:"d",text:"Unlimited"}],
+    correct:"c",
+    hint:"It's double the standard cap.",
+    explanation:"Pushing a gang block with more than 5 suspects allows up to 20 officers to participate on that call.",
+    correctFeedback:"That's it.", incorrectFeedback:"Not this time." },
+  { prompt:"A Prison Transport (10-86) call is active. What's the max officer count, and what's unusual about how it's counted?",
+    options:[{id:"a",text:"10 max, DOC excluded"},{id:"b",text:"15 max, and it includes DOC officers carrying lethals"},{id:"c",text:"10 max, and it excludes anyone using lethals"},{id:"d",text:"Unlimited, since it's a high-risk call"}],
+    correct:"b",
+    hint:"It's the one call type on the table with a higher-than-normal ceiling.",
+    explanation:"Prison Transport allows 7 units and 15 officers total, and that 15 explicitly includes DOC personnel carrying lethal weapons.",
+    correctFeedback:"Nailed it.", incorrectFeedback:"Not quite — it's higher than the usual 10." },
+  { prompt:"A robbery call is in progress with 8 officers on scene. Suspects open fire and it becomes a shootout. What happens to the officer cap?",
+    options:[{id:"a",text:"Nothing changes, cap stays wherever it was"},{id:"b",text:"It drops to 5 for safety"},{id:"c",text:"It rises to 10 automatically"},{id:"d",text:"It becomes unlimited"}],
+    correct:"c",
+    hint:"Look at the asterisked note at the bottom of the responding-unit table.",
+    explanation:"If any call escalates into a shootout, the maximum number of officers who can respond increases to 10, regardless of what the original call type's cap was.",
+    correctFeedback:"Right on.", incorrectFeedback:"Not quite — shootouts always bump it to the same number." },
+  { prompt:"Which situation code is used for a suspect vehicle actively fleeing, whether by car or on foot?",
+    options:[{id:"a",text:"10-37"},{id:"b",text:"10-61"},{id:"c",text:"10-80"},{id:"d",text:"10-94"}],
+    correct:"c",
+    hint:"It's the same code whether they bail out of the car or never had one.",
+    explanation:"10-80 covers both a vehicle pursuit and a foot pursuit — 10-37 is just investigating a suspicious vehicle, 10-61 is a gang fight, and 10-94 is drag racing.",
+    correctFeedback:"Correct.", incorrectFeedback:"Not this one." },
+  { prompt:"Which situation code specifically means an officer is down and it's NOT urgent?",
+    options:[{id:"a",text:"10-13A"},{id:"b",text:"10-13B"},{id:"c",text:"10-14A"},{id:"d",text:"10-14B"}],
+    correct:"b",
+    hint:"The 'A' suffix is always the urgent version, the 'B' suffix the non-urgent one.",
+    explanation:"10-13B is Officer Down / NOT Urgent. 10-13A is the urgent version, and the 10-14 pair covers a medic being down instead of an officer.",
+    correctFeedback:"Yes.", incorrectFeedback:"Not quite — remember A means urgent." },
+  { prompt:"Suspects swap into 3 or more vehicles at the same time during a chase. What happens to the 10-officer cap?",
+    options:[{id:"a",text:"It stays fixed at 10 no matter what"},{id:"b",text:"It can be broken, up to a max of 2 units per involved vehicle"},{id:"c",text:"It drops to 5 to keep things manageable"},{id:"d",text:"Only a Sergeant can override it, no cap increase otherwise"}],
+    correct:"b",
+    hint:"This is the one specific exception called out for the officer cap.",
+    explanation:"When suspects swap into 3+ cars at once, more units are needed and the 10-officer count can be broken — capped at a maximum of 2 cars per involved vehicle.",
+    correctFeedback:"That's right.", incorrectFeedback:"Not quite — there's a specific exception for multi-car swaps." }
+];
+
+let quizState = {index:0, score:0, answered:false};
+
+function quizScoreMessage(score, total){
+  const pct = score / total;
+  if(pct === 1) return "Perfect score — you know your unit counts cold.";
+  if(pct >= 0.75) return "Solid work — a couple worth a second look.";
+  if(pct >= 0.5) return "Halfway there — review Criminal Activities & Response and 10-Codes.";
+  return "Worth a re-read of Criminal Activities & Response and 10-Codes before your next shift.";
+}
+
+function renderQuizQuestion(){
+  const total = quizQuestions.length;
+  if(quizState.index >= total){
+    modalBody.innerHTML = `
+      <div class="quiz-score">
+        <div class="big">${quizState.score} / ${total}</div>
+        <p style="color:var(--paper-dim);">${quizScoreMessage(quizState.score, total)}</p>
+        <button class="quiz-btn" id="quizRetry">Try Again</button>
+      </div>
+    `;
+    document.getElementById('quizRetry').addEventListener('click', () => {
+      quizState = {index:0, score:0, answered:false};
+      renderQuizQuestion();
+    });
+    return;
+  }
+
+  const q = quizQuestions[quizState.index];
+  modalBody.innerHTML = `
+    <div class="quiz-progress">Question ${quizState.index + 1} of ${total} · Score: ${quizState.score}</div>
+    <div class="quiz-prompt">${q.prompt}</div>
+    ${q.hint ? `<button class="quiz-hint-btn" id="quizHintBtn">Show hint</button><div class="quiz-hint-text" id="quizHintText" style="display:none;">${q.hint}</div>` : ''}
+    <div id="quizOptions"></div>
+  `;
+
+  const optionsEl = document.getElementById('quizOptions');
+  q.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'quiz-option';
+    btn.textContent = opt.text;
+    btn.addEventListener('click', () => selectQuizOption(opt.id));
+    optionsEl.appendChild(btn);
+  });
+
+  if(q.hint){
+    document.getElementById('quizHintBtn').addEventListener('click', () => {
+      const t = document.getElementById('quizHintText');
+      t.style.display = t.style.display === 'none' ? 'block' : 'none';
+    });
+  }
+}
+
+function selectQuizOption(optId){
+  if(quizState.answered) return;
+  quizState.answered = true;
+  const q = quizQuestions[quizState.index];
+  const correct = optId === q.correct;
+  if(correct) quizState.score++;
+
+  const allBtns = Array.from(document.querySelectorAll('.quiz-option'));
+  allBtns.forEach(b => b.classList.add('disabled'));
+  const chosenIdx = q.options.findIndex(o => o.id === optId);
+  allBtns[chosenIdx].classList.add(correct ? 'correct' : 'incorrect');
+  if(!correct){
+    const correctIdx = q.options.findIndex(o => o.id === q.correct);
+    allBtns[correctIdx].classList.add('correct');
+  }
+
+  const feedback = document.createElement('div');
+  feedback.className = 'quiz-feedback' + (correct ? '' : ' wrong');
+  feedback.innerHTML = `<strong>${correct ? (q.correctFeedback || 'Correct.') : (q.incorrectFeedback || 'Not quite.')}</strong> ${q.explanation}`;
+  document.getElementById('quizOptions').after(feedback);
+
+  const isLast = quizState.index === quizQuestions.length - 1;
+  const nav = document.createElement('div');
+  nav.className = 'quiz-nav';
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'quiz-btn';
+  nextBtn.textContent = isLast ? 'See results' : 'Next question';
+  nextBtn.addEventListener('click', () => {
+    quizState.index++;
+    quizState.answered = false;
+    renderQuizQuestion();
+  });
+  nav.appendChild(nextBtn);
+  feedback.after(nav);
+}
 </script>
 
 </body>
