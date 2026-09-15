@@ -323,6 +323,69 @@
   .quiz-score .big{ font-size:46px; color:var(--gold); font-weight:700; font-family:'Helvetica Neue',Arial,sans-serif; }
   .quiz-score p{ max-width:100%; }
 
+  .modal.wide{ max-width:980px; }
+
+  .pc-search-wrap{
+    position:sticky; top:0; z-index:3;
+    background:var(--navy);
+    padding-bottom:12px; margin-bottom:10px;
+    border-bottom:1px solid var(--navy-line);
+  }
+  .pc-search{
+    width:100%; box-sizing:border-box;
+    padding:11px 14px; border-radius:6px;
+    border:1px solid var(--navy-line);
+    background:var(--navy-panel); color:var(--paper);
+    font-family:'Helvetica Neue',Arial,sans-serif; font-size:13.5px;
+  }
+  .pc-search::placeholder{ color:var(--paper-dim); }
+  .pc-search:focus{ outline:none; border-color:var(--gold-dim); }
+  .pc-no-results{ font-family:'Helvetica Neue',Arial,sans-serif; color:var(--paper-dim); font-size:13px; padding:14px 4px; display:none; }
+
+  .pc-group{
+    border:1px solid var(--navy-line); border-radius:6px;
+    margin-bottom:10px; overflow:hidden;
+  }
+  .pc-group summary{
+    cursor:pointer; list-style:none;
+    padding:12px 16px;
+    background:var(--navy-panel);
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-weight:600; font-size:13px; color:var(--gold);
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .pc-group summary::-webkit-details-marker{ display:none; }
+  .pc-group summary .pc-count{ font-size:11px; color:var(--paper-dim); font-weight:400; white-space:nowrap; }
+  .pc-group-body{ padding:6px 14px 12px; }
+
+  .pc-item{ padding:10px 0; border-bottom:1px solid var(--navy-line); }
+  .pc-item:last-child{ border-bottom:none; }
+  .pc-item-head{ display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; margin-bottom:4px; }
+  .pc-num{ font-family:'Helvetica Neue',Arial,sans-serif; font-size:11px; color:var(--gold-dim); font-weight:700; white-space:nowrap; }
+  .pc-name{ font-family:'Iowan Old Style','Georgia',serif; font-size:14.5px; font-weight:600; color:var(--paper); }
+  .pc-desc{ font-family:'Helvetica Neue',Arial,sans-serif; font-size:12.5px; color:var(--paper-dim); margin-bottom:8px; max-width:72ch; }
+  .pc-tiers{ display:flex; flex-direction:column; gap:4px; }
+  .pc-tier{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Helvetica Neue',Arial,sans-serif; font-size:12px;
+    background:var(--navy-panel); border-radius:4px; padding:6px 10px;
+  }
+  .pc-tier-label{ color:var(--paper); min-width:150px; flex-shrink:0; }
+  .pc-class{
+    display:inline-block; padding:1px 8px; border-radius:9px;
+    font-size:10px; font-weight:700; white-space:nowrap;
+  }
+  .pc-class.infraction{ background:rgba(58,95,150,.28); color:#a9c2ec; }
+  .pc-class.misdemeanor{ background:rgba(76,138,94,.28); color:#9bdcaf; }
+  .pc-class.felony{ background:rgba(179,64,44,.28); color:#eba396; }
+  .pc-class.capital{ background:rgba(106,76,147,.32); color:#d2b3f5; }
+  .pc-tier-stat{ color:var(--paper-dim); white-space:nowrap; }
+  .pc-def{ padding:9px 0; border-bottom:1px solid var(--navy-line); }
+  .pc-def:last-child{ border-bottom:none; }
+  .pc-def-term{ font-family:'Helvetica Neue',Arial,sans-serif; font-weight:700; font-size:12.5px; color:var(--gold); margin-bottom:3px; }
+  .pc-def-body{ font-family:'Helvetica Neue',Arial,sans-serif; font-size:12.5px; color:var(--paper-dim); max-width:72ch; }
+  .pc-row-hidden{ display:none !important; }
+
   .caselaw-card{
     background:var(--navy-panel);
     border:1px solid var(--navy-line);
@@ -389,6 +452,7 @@ const groups = [
   { title:"Field Operations", items:["pursuits","force","radio","traffic"] },
   { title:"Enforcement & Custody", items:["crime","cleanup","gang","suspects","warrants"] },
   { title:"Quick Reference", items:["codes","caselaw"] },
+  { title:"Legal Code", items:["penalcode"] },
   { title:"Practice", items:["quizUnits","quizSituations"] }
 ];
 
@@ -902,6 +966,12 @@ const sections = {
       </div>
     `
   },
+  penalcode:{
+    title:"Penal Code",
+    eyebrow:"EchoRP Public Penal Code",
+    teaser:"Searchable reference — all 12 titles, sentencing & definitions.",
+    isPenalCode:true
+  },
   quizUnits:{
     title:"Unit Numbers",
     eyebrow:"Practice quiz",
@@ -944,6 +1014,7 @@ groups.forEach(group => {
 });
 
 const overlay = document.getElementById('overlay');
+const modal = document.getElementById('modal');
 const modalTitle = document.getElementById('modalTitle');
 const modalEyebrow = document.getElementById('modalEyebrow');
 const modalBody = document.getElementById('modalBody');
@@ -953,9 +1024,12 @@ function openModal(id){
   const s = sections[id];
   modalEyebrow.textContent = s.eyebrow;
   modalTitle.textContent = s.title;
+  modal.classList.toggle('wide', !!s.isPenalCode);
   if(s.isQuiz){
     quizState = {quizId:id, index:0, score:0, answered:false};
     renderQuizQuestion();
+  } else if(s.isPenalCode){
+    renderPenalCode();
   } else {
     modalBody.innerHTML = s.body;
   }
@@ -971,110 +1045,164 @@ modalClose.addEventListener('click', closeModal);
 overlay.addEventListener('click', e => { if(e.target === overlay) closeModal(); });
 document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
 
-/* ===== Quiz: Unit Numbers & Situations ===== */
-const quizQuestions = [
-  { prompt:"What's the standard maximum number of officers that can respond to any situation?",
-    options:[{id:"a",text:"5"},{id:"b",text:"10"},{id:"c",text:"15"},{id:"d",text:"20"}],
-    correct:"b",
-    hint:"It's the same number used as the baseline cap across almost every call type in the response table.",
-    explanation:"10 officers is the standard max, with exceptions like the 3+ car swap rule, gang fights (10 per gang), and gang block pushes (20 with 5+ suspects).",
-    correctFeedback:"Locked in.", incorrectFeedback:"Close, but no." },
-  { prompt:"How is a 'unit' defined for counting purposes?",
-    options:[{id:"a",text:"Any officer on the call"},{id:"b",text:"A vehicle, max 3 officers each"},{id:"c",text:"A pair of officers, regardless of vehicle"},{id:"d",text:"Any vehicle, unlimited officers"}],
-    correct:"b",
-    hint:"It's about the vehicle, not the people in it.",
-    explanation:"A unit is a vehicle, and every vehicle can carry a maximum of 3 officers.",
-    correctFeedback:"Correct.", incorrectFeedback:"Not quite." },
-  { prompt:"Two MOTO bikes riding as a 'tandem' count as how many units?",
-    options:[{id:"a",text:"0.5"},{id:"b",text:"1"},{id:"c",text:"2"},{id:"d",text:"3"}],
-    correct:"b",
-    hint:"The tandem is treated as a single package on the radio, not two separate vehicles.",
-    explanation:"A MOTO 'tandem' — 2 bikes — counts as just 1 unit.",
-    correctFeedback:"Yep.", incorrectFeedback:"Not this one." },
-  { prompt:"A helicopter with 2 officers aboard responds to a call. How does that count against the limits?",
-    options:[{id:"a",text:"Counts as 1 unit, 2 officers"},{id:"b",text:"Doesn't count as a unit, but the 2 officers count toward the officer cap"},{id:"c",text:"Doesn't count toward either limit"},{id:"d",text:"Counts as 1 unit, officers don't count"}],
-    correct:"b",
-    hint:"Think about what's tracked separately: the airframe itself vs. the people in it.",
-    explanation:"Helicopters don't count toward the unit count, but the officers inside still count toward the max officer count.",
-    correctFeedback:"Exactly right.", incorrectFeedback:"Not quite — check what counts vs. what doesn't." },
-  { prompt:"Which of these does NOT count toward the 10-officer max?",
-    options:[{id:"a",text:"A K9 or unarmed civilian ride-along"},{id:"b",text:"An officer riding in a helicopter"},{id:"c",text:"An officer on a MOTO bike"},{id:"d",text:"An officer in a ground vehicle"}],
-    correct:"a",
-    hint:"This one isn't a sworn officer with a badge.",
-    explanation:"Every officer counts as 1, but K9s and unarmed/civilian ride-alongs do not count toward the 10-officer maximum.",
-    correctFeedback:"That's the one.", incorrectFeedback:"Try again." },
-  { prompt:"A gang fight breaks out with two gangs involved. What's the base officer allowance?",
-    options:[{id:"a",text:"10 total, split between both gangs"},{id:"b",text:"10 officers per gang involved"},{id:"c",text:"5 officers per gang involved"},{id:"d",text:"20 officers total, no matter how many gangs"}],
-    correct:"b",
-    hint:"It scales with the number of gangs, not a flat total.",
-    explanation:"A gang fight may have a response of 10 officers per gang involved, rising to 10 total if officers themselves become involved in the shootout.",
-    correctFeedback:"Correct.", incorrectFeedback:"Not quite." },
-  { prompt:"Officers are forced to 'push' a gang block that has more than 5 suspects present. How many officers are allowed on that call?",
-    options:[{id:"a",text:"10"},{id:"b",text:"15"},{id:"c",text:"20"},{id:"d",text:"Unlimited"}],
-    correct:"c",
-    hint:"It's double the standard cap.",
-    explanation:"Pushing a gang block with more than 5 suspects allows up to 20 officers to participate on that call.",
-    correctFeedback:"That's it.", incorrectFeedback:"Not this time." },
-  { prompt:"A Prison Transport (10-86) call is active. What's the max officer count, and what's unusual about how it's counted?",
-    options:[{id:"a",text:"10 max, DOC excluded"},{id:"b",text:"15 max, and it includes DOC officers carrying lethals"},{id:"c",text:"10 max, and it excludes anyone using lethals"},{id:"d",text:"Unlimited, since it's a high-risk call"}],
-    correct:"b",
-    hint:"It's the one call type on the table with a higher-than-normal ceiling.",
-    explanation:"Prison Transport allows 7 units and 15 officers total, and that 15 explicitly includes DOC personnel carrying lethal weapons.",
-    correctFeedback:"Nailed it.", incorrectFeedback:"Not quite — it's higher than the usual 10." },
-  { prompt:"A robbery call is in progress with 8 officers on scene. Suspects open fire and it becomes a shootout. What happens to the officer cap?",
-    options:[{id:"a",text:"Nothing changes, cap stays wherever it was"},{id:"b",text:"It drops to 5 for safety"},{id:"c",text:"It rises to 10 automatically"},{id:"d",text:"It becomes unlimited"}],
-    correct:"c",
-    hint:"Look at the asterisked note at the bottom of the responding-unit table.",
-    explanation:"If any call escalates into a shootout, the maximum number of officers who can respond increases to 10, regardless of what the original call type's cap was.",
-    correctFeedback:"Right on.", incorrectFeedback:"Not quite — shootouts always bump it to the same number." },
-  { prompt:"Which situation code is used for a suspect vehicle actively fleeing, whether by car or on foot?",
-    options:[{id:"a",text:"10-37"},{id:"b",text:"10-61"},{id:"c",text:"10-80"},{id:"d",text:"10-94"}],
-    correct:"c",
-    hint:"It's the same code whether they bail out of the car or never had one.",
-    explanation:"10-80 covers both a vehicle pursuit and a foot pursuit — 10-37 is just investigating a suspicious vehicle, 10-61 is a gang fight, and 10-94 is drag racing.",
-    correctFeedback:"Correct.", incorrectFeedback:"Not this one." },
-  { prompt:"Which situation code specifically means an officer is down and it's NOT urgent?",
-    options:[{id:"a",text:"10-13A"},{id:"b",text:"10-13B"},{id:"c",text:"10-14A"},{id:"d",text:"10-14B"}],
-    correct:"b",
-    hint:"The 'A' suffix is always the urgent version, the 'B' suffix the non-urgent one.",
-    explanation:"10-13B is Officer Down / NOT Urgent. 10-13A is the urgent version, and the 10-14 pair covers a medic being down instead of an officer.",
-    correctFeedback:"Yes.", incorrectFeedback:"Not quite — remember A means urgent." },
-  { prompt:"Suspects swap into 3 or more vehicles at the same time during a chase. What happens to the 10-officer cap?",
-    options:[{id:"a",text:"It stays fixed at 10 no matter what"},{id:"b",text:"It can be broken, up to a max of 2 units per involved vehicle"},{id:"c",text:"It drops to 5 to keep things manageable"},{id:"d",text:"Only a Sergeant can override it, no cap increase otherwise"}],
-    correct:"b",
-    hint:"This is the one specific exception called out for the officer cap.",
-    explanation:"When suspects swap into 3+ cars at once, more units are needed and the 10-officer count can be broken — capped at a maximum of 2 cars per involved vehicle.",
-    correctFeedback:"That's right.", incorrectFeedback:"Not quite — there's a specific exception for multi-car swaps." }
-];
+/* ===== Quizzes ===== */
+const quizzes = {
+  quizUnits: [
+    { prompt:"What's the standard maximum number of officers that can respond to any situation?",
+      options:[{id:"a",text:"5"},{id:"b",text:"10"},{id:"c",text:"15"},{id:"d",text:"20"}],
+      correct:"b",
+      hint:"It's the same number used as the baseline cap across almost every call type in the response table.",
+      explanation:"10 officers is the standard max, with exceptions like the 3+ car swap rule, gang fights (10 per gang), and gang block pushes (20 with 5+ suspects).",
+      correctFeedback:"Locked in.", incorrectFeedback:"Close, but no." },
+    { prompt:"How is a 'unit' defined for counting purposes?",
+      options:[{id:"a",text:"Any officer on the call"},{id:"b",text:"A vehicle, max 3 officers each"},{id:"c",text:"A pair of officers, regardless of vehicle"},{id:"d",text:"Any vehicle, unlimited officers"}],
+      correct:"b",
+      hint:"It's about the vehicle, not the people in it.",
+      explanation:"A unit is a vehicle, and every vehicle can carry a maximum of 3 officers.",
+      correctFeedback:"Correct.", incorrectFeedback:"Not quite." },
+    { prompt:"Two MOTO bikes riding as a 'tandem' count as how many units?",
+      options:[{id:"a",text:"0.5"},{id:"b",text:"1"},{id:"c",text:"2"},{id:"d",text:"3"}],
+      correct:"b",
+      hint:"The tandem is treated as a single package on the radio, not two separate vehicles.",
+      explanation:"A MOTO 'tandem' — 2 bikes — counts as just 1 unit.",
+      correctFeedback:"Yep.", incorrectFeedback:"Not this one." },
+    { prompt:"A helicopter with 2 officers aboard responds to a call. How does that count against the limits?",
+      options:[{id:"a",text:"Counts as 1 unit, 2 officers"},{id:"b",text:"Doesn't count as a unit, but the 2 officers count toward the officer cap"},{id:"c",text:"Doesn't count toward either limit"},{id:"d",text:"Counts as 1 unit, officers don't count"}],
+      correct:"b",
+      hint:"Think about what's tracked separately: the airframe itself vs. the people in it.",
+      explanation:"Helicopters don't count toward the unit count, but the officers inside still count toward the max officer count.",
+      correctFeedback:"Exactly right.", incorrectFeedback:"Not quite — check what counts vs. what doesn't." },
+    { prompt:"Which of these does NOT count toward the 10-officer max?",
+      options:[{id:"a",text:"A K9 or unarmed civilian ride-along"},{id:"b",text:"An officer riding in a helicopter"},{id:"c",text:"An officer on a MOTO bike"},{id:"d",text:"An officer in a ground vehicle"}],
+      correct:"a",
+      hint:"This one isn't a sworn officer with a badge.",
+      explanation:"Every officer counts as 1, but K9s and unarmed/civilian ride-alongs do not count toward the 10-officer maximum.",
+      correctFeedback:"That's the one.", incorrectFeedback:"Try again." },
+    { prompt:"A gang fight breaks out with two gangs involved. What's the base officer allowance?",
+      options:[{id:"a",text:"10 total, split between both gangs"},{id:"b",text:"10 officers per gang involved"},{id:"c",text:"5 officers per gang involved"},{id:"d",text:"20 officers total, no matter how many gangs"}],
+      correct:"b",
+      hint:"It scales with the number of gangs, not a flat total.",
+      explanation:"A gang fight may have a response of 10 officers per gang involved, rising to 10 total if officers themselves become involved in the shootout.",
+      correctFeedback:"Correct.", incorrectFeedback:"Not quite." },
+    { prompt:"Officers are forced to 'push' a gang block that has more than 5 suspects present. How many officers are allowed on that call?",
+      options:[{id:"a",text:"10"},{id:"b",text:"15"},{id:"c",text:"20"},{id:"d",text:"Unlimited"}],
+      correct:"c",
+      hint:"It's double the standard cap.",
+      explanation:"Pushing a gang block with more than 5 suspects allows up to 20 officers to participate on that call.",
+      correctFeedback:"That's it.", incorrectFeedback:"Not this time." },
+    { prompt:"A Prison Transport (10-86) call is active. What's the max officer count, and what's unusual about how it's counted?",
+      options:[{id:"a",text:"10 max, DOC excluded"},{id:"b",text:"15 max, and it includes DOC officers carrying lethals"},{id:"c",text:"10 max, and it excludes anyone using lethals"},{id:"d",text:"Unlimited, since it's a high-risk call"}],
+      correct:"b",
+      hint:"It's the one call type on the table with a higher-than-normal ceiling.",
+      explanation:"Prison Transport allows 7 units and 15 officers total, and that 15 explicitly includes DOC personnel carrying lethal weapons.",
+      correctFeedback:"Nailed it.", incorrectFeedback:"Not quite — it's higher than the usual 10." },
+    { prompt:"A robbery call is in progress with 8 officers on scene. Suspects open fire and it becomes a shootout. What happens to the officer cap?",
+      options:[{id:"a",text:"Nothing changes, cap stays wherever it was"},{id:"b",text:"It drops to 5 for safety"},{id:"c",text:"It rises to 10 automatically"},{id:"d",text:"It becomes unlimited"}],
+      correct:"c",
+      hint:"Look at the asterisked note at the bottom of the responding-unit table.",
+      explanation:"If any call escalates into a shootout, the maximum number of officers who can respond increases to 10, regardless of what the original call type's cap was.",
+      correctFeedback:"Right on.", incorrectFeedback:"Not quite — shootouts always bump it to the same number." },
+    { prompt:"Suspects swap into 3 or more vehicles at the same time during a chase. What happens to the 10-officer cap?",
+      options:[{id:"a",text:"It stays fixed at 10 no matter what"},{id:"b",text:"It can be broken, up to a max of 2 units per involved vehicle"},{id:"c",text:"It drops to 5 to keep things manageable"},{id:"d",text:"Only a Sergeant can override it, no cap increase otherwise"}],
+      correct:"b",
+      hint:"This is the one specific exception called out for the officer cap.",
+      explanation:"When suspects swap into 3+ cars at once, more units are needed and the 10-officer count can be broken — capped at a maximum of 2 cars per involved vehicle.",
+      correctFeedback:"That's right.", incorrectFeedback:"Not quite — there's a specific exception for multi-car swaps." }
+  ],
+  quizSituations: [
+    { prompt:"What does 10-61 mean?",
+      options:[{id:"a",text:"Robbery"},{id:"b",text:"Gang Fight"},{id:"c",text:"Riot"},{id:"d",text:"Domestic Problem"}],
+      correct:"b",
+      hint:"It's one rank above a regular fight-in-progress call.",
+      explanation:"10-61 is Gang Fight — a red-flagged code, distinct from 10-10 (Fight in Progress) and 10-34 (Riot).",
+      correctFeedback:"Correct.", incorrectFeedback:"Not quite." },
+    { prompt:"Which code is used for a Hit and Run?",
+      options:[{id:"a",text:"10-50"},{id:"b",text:"10-55"},{id:"c",text:"10-57"},{id:"d",text:"10-81"}],
+      correct:"c",
+      hint:"It's two numbers after 'Suspected DUI.'",
+      explanation:"10-57 is Hit and Run. 10-50 is a Vehicle Accident, 10-55 is Suspected DUI, and 10-81 is Vehicle Theft.",
+      correctFeedback:"Yep.", incorrectFeedback:"Not this one." },
+    { prompt:"What does 10-89 mean?",
+      options:[{id:"a",text:"Explosion"},{id:"b",text:"Bomb Threat"},{id:"c",text:"Hospital Lockdown"},{id:"d",text:"Notify Coroner"}],
+      correct:"b",
+      hint:"This one is a threat, not the actual detonation.",
+      explanation:"10-89 is Bomb Threat. 10-82 is the actual Explosion.",
+      correctFeedback:"That's it.", incorrectFeedback:"Not quite." },
+    { prompt:"Which code covers a suspect actively stealing a vehicle?",
+      options:[{id:"a",text:"10-33"},{id:"b",text:"10-38"},{id:"c",text:"10-81"},{id:"d",text:"10-94"}],
+      correct:"c",
+      hint:"It shares its first digit-pair with 'Pick Up Prisoner,' but the meaning is very different.",
+      explanation:"10-81 is Vehicle Theft. 10-33 is Breaking and Entering, 10-38 is Stopping a Suspicious Vehicle, and 10-94 is Drag Racing.",
+      correctFeedback:"Correct.", incorrectFeedback:"Not this one." },
+    { prompt:"What does 10-43 mean?",
+      options:[{id:"a",text:"Hospital Lockdown"},{id:"b",text:"Notify Coroner"},{id:"c",text:"High Risk Prison Transport"},{id:"d",text:"Jail Break"}],
+      correct:"a",
+      hint:"It's a red-flagged code and it's not about a jail.",
+      explanation:"10-43 is Hospital Lockdown. 10-86 is High Risk Prison Transport and 10-98 is Jail Break.",
+      correctFeedback:"Right.", incorrectFeedback:"Not quite." },
+    { prompt:"A call comes in for a domestic disturbance. What code does dispatch use?",
+      options:[{id:"a",text:"10-15"},{id:"b",text:"10-16"},{id:"c",text:"10-44"},{id:"d",text:"10-45"}],
+      correct:"b",
+      hint:"It's right between 'Suspicious Activity' and 'Return to ___.'",
+      explanation:"10-16 is Domestic Problem. 10-15 is general Suspicious Activity, 10-44 is Brandishing, and 10-45 is Trespassing.",
+      correctFeedback:"Correct.", incorrectFeedback:"Not this one." },
+    { prompt:"What does 10-98 mean?",
+      options:[{id:"a",text:"Jail Break"},{id:"b",text:"Suspect in Custody"},{id:"c",text:"Pick Up Prisoner"},{id:"d",text:"High Risk Prison Transport"}],
+      correct:"a",
+      hint:"It's the very last numbered 10-code on the sheet.",
+      explanation:"10-98 is Jail Break. 10-95 is Suspect in Custody, 10-91 is Pick Up Prisoner, and 10-86 is High Risk Prison Transport.",
+      correctFeedback:"That's it.", incorrectFeedback:"Not quite." },
+    { prompt:"Which code specifically means an officer is down and it IS urgent?",
+      options:[{id:"a",text:"10-13A"},{id:"b",text:"10-13B"},{id:"c",text:"10-14A"},{id:"d",text:"10-14B"}],
+      correct:"a",
+      hint:"The 'A' suffix always means urgent.",
+      explanation:"10-13A is Officer Down / URGENT. 10-13B is the not-urgent version, and the 10-14 pair covers a medic being down instead.",
+      correctFeedback:"Yes.", incorrectFeedback:"Not quite — remember A means urgent." },
+    { prompt:"Which situation code is used for a suspect vehicle actively fleeing, whether by car or on foot?",
+      options:[{id:"a",text:"10-37"},{id:"b",text:"10-61"},{id:"c",text:"10-80"},{id:"d",text:"10-94"}],
+      correct:"c",
+      hint:"It's the same code whether they bail out of the car or never had one.",
+      explanation:"10-80 covers both a vehicle pursuit and a foot pursuit — 10-37 is just investigating a suspicious vehicle, 10-61 is a gang fight, and 10-94 is drag racing.",
+      correctFeedback:"Correct.", incorrectFeedback:"Not this one." },
+    { prompt:"What does 10-69 mean?",
+      options:[{id:"a",text:"Drug Trafficking"},{id:"b",text:"ATM Robbery"},{id:"c",text:"Suspicious Network Activity"},{id:"d",text:"Convoy/Escort"}],
+      correct:"a",
+      hint:"It's not about a stolen vehicle or a stolen network — it's a controlled-substance call.",
+      explanation:"10-69 is Drug Trafficking. 10-32 is ATM Robbery, 10-49C is Suspicious Network Activity, and 10-59 is Convoy/Escort.",
+      correctFeedback:"Nailed it.", incorrectFeedback:"Not quite." }
+  ]
+};
 
-let quizState = {index:0, score:0, answered:false};
+let quizState = {quizId:null, index:0, score:0, answered:false};
 
-function quizScoreMessage(score, total){
+function quizScoreMessage(score, total, quizId){
   const pct = score / total;
-  if(pct === 1) return "Perfect score — you know your unit counts cold.";
+  const topic = quizId === 'quizUnits' ? "Criminal Activities & Response" : "10-Codes";
+  if(pct === 1) return "Perfect score — you know this cold.";
   if(pct >= 0.75) return "Solid work — a couple worth a second look.";
-  if(pct >= 0.5) return "Halfway there — review Criminal Activities & Response and 10-Codes.";
-  return "Worth a re-read of Criminal Activities & Response and 10-Codes before your next shift.";
+  if(pct >= 0.5) return `Halfway there — review ${topic}.`;
+  return `Worth a re-read of ${topic} before your next shift.`;
 }
 
 function renderQuizQuestion(){
-  const total = quizQuestions.length;
+  const questions = quizzes[quizState.quizId];
+  const total = questions.length;
   if(quizState.index >= total){
     modalBody.innerHTML = `
       <div class="quiz-score">
         <div class="big">${quizState.score} / ${total}</div>
-        <p style="color:var(--paper-dim);">${quizScoreMessage(quizState.score, total)}</p>
+        <p style="color:var(--paper-dim);">${quizScoreMessage(quizState.score, total, quizState.quizId)}</p>
         <button class="quiz-btn" id="quizRetry">Try Again</button>
       </div>
     `;
     document.getElementById('quizRetry').addEventListener('click', () => {
-      quizState = {index:0, score:0, answered:false};
+      quizState = {quizId:quizState.quizId, index:0, score:0, answered:false};
       renderQuizQuestion();
     });
     return;
   }
 
-  const q = quizQuestions[quizState.index];
+  const q = questions[quizState.index];
   modalBody.innerHTML = `
     <div class="quiz-progress">Question ${quizState.index + 1} of ${total} · Score: ${quizState.score}</div>
     <div class="quiz-prompt">${q.prompt}</div>
@@ -1102,7 +1230,7 @@ function renderQuizQuestion(){
 function selectQuizOption(optId){
   if(quizState.answered) return;
   quizState.answered = true;
-  const q = quizQuestions[quizState.index];
+  const q = quizzes[quizState.quizId][quizState.index];
   const correct = optId === q.correct;
   if(correct) quizState.score++;
 
@@ -1120,7 +1248,7 @@ function selectQuizOption(optId){
   feedback.innerHTML = `<strong>${correct ? (q.correctFeedback || 'Correct.') : (q.incorrectFeedback || 'Not quite.')}</strong> ${q.explanation}`;
   document.getElementById('quizOptions').after(feedback);
 
-  const isLast = quizState.index === quizQuestions.length - 1;
+  const isLast = quizState.index === quizzes[quizState.quizId].length - 1;
   const nav = document.createElement('div');
   nav.className = 'quiz-nav';
   const nextBtn = document.createElement('button');
@@ -1134,6 +1262,556 @@ function selectQuizOption(optId){
   nav.appendChild(nextBtn);
   feedback.after(nav);
 }
+
+/* ===== Penal Code ===== */
+function pcClassSlug(c){
+  if(c.indexOf("Capital") === 0) return "capital";
+  if(c.indexOf("Felony") === 0) return "felony";
+  if(c.indexOf("Misdemeanor") === 0) return "misdemeanor";
+  return "infraction";
+}
+
+const penalCodeData = {
+  offenseGroups: [
+    { title:"Title 1 — Offenses Against Persons", items:[
+      {pc:"1001", name:"Criminal Threats", desc:"Threatening to physically harm or kill someone (verbal, written, electronic, social media), causing reasonable sustained fear.", tiers:[{label:"", cls:"Misdemeanor", months:"5 mo", fine:"$500"}]},
+      {pc:"1002", name:"Aggravated Criminal Threats", desc:"Willfully threatening death or great bodily injury with unequivocal, immediate, specific intent, causing reasonable sustained fear.", tiers:[{label:"", cls:"Misdemeanor", months:"15 mo", fine:"$1,000"}]},
+      {pc:"1003", name:"Unlawful Imprisonment", desc:"Restricting someone's freedom of movement without legal justification or consent.", tiers:[
+        {label:"Standard", cls:"Misdemeanor", months:"10 mo", fine:"$750"},
+        {label:"Government Employee", cls:"Felony", months:"20 mo", fine:"$1,500"},
+        {label:"Judiciary Member", cls:"Felony", months:"30 mo", fine:"$3,500"}
+      ]},
+      {pc:"1004", name:"Kidnapping", desc:"Unlawfully confining, restraining, or removing someone — for ransom/hostage/shield, to aid a felony or its flight, or to harm/terrorize them.", tiers:[
+        {label:"Standard", cls:"Felony", months:"20 mo", fine:"$3,000"},
+        {label:"Government Employee", cls:"Felony", months:"40 mo", fine:"$5,000"},
+        {label:"Judiciary Member", cls:"Felony", months:"50 mo", fine:"$7,500"}
+      ]},
+      {pc:"1005–1006", name:"Domestic Violence", desc:"Violence or abuse against a spouse, partner, family, or household member. Felony tier applies when serious bodily injury or grievous violence results.", tiers:[
+        {label:"Misdemeanor", cls:"Misdemeanor", months:"15 mo", fine:"$1,250"},
+        {label:"Felony (serious injury)", cls:"Felony", months:"25 mo", fine:"$2,500"}
+      ]},
+      {pc:"1007", name:"Reckless Endangerment", desc:"Willfully or wantonly engaging in an activity that endangers another person's life or property.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$1,000"}]},
+      {pc:"1008", name:"Assault", desc:"Attempted or threatened violent injury to another, with present ability, even if no actual harm occurs.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$1,000"}]},
+      {pc:"1009", name:"Battery", desc:"Unlawful use of force or violence (or a Class 0a–0b weapon) causing physical harm to another without consent.", tiers:[
+        {label:"Standard", cls:"Misdemeanor", months:"15 mo", fine:"$1,500"},
+        {label:"Government Employee", cls:"Felony", months:"20 mo", fine:"$2,000"},
+        {label:"Judiciary Member", cls:"Felony", months:"30 mo", fine:"$3,000"}
+      ]},
+      {pc:"1010", name:"Aggravated Assault", desc:"Intentionally threatening or attempting serious bodily harm via a deadly weapon or dangerous conduct, even without contact.", tiers:[
+        {label:"Standard", cls:"Felony", months:"25 mo", fine:"$3,000"},
+        {label:"Government Employee", cls:"Felony", months:"30 mo", fine:"$4,000"},
+        {label:"Judiciary Member", cls:"Felony", months:"40 mo", fine:"$6,000"}
+      ]},
+      {pc:"1011", name:"Aggravated Battery", desc:"Unlawful, intentional force causing or attempting serious bodily injury via a deadly weapon or dangerous instrument.", tiers:[
+        {label:"Standard", cls:"Felony", months:"30 mo", fine:"$5,000"},
+        {label:"Government Employee", cls:"Felony", months:"40 mo", fine:"$7,000"},
+        {label:"Judiciary Member", cls:"Felony", months:"50 mo", fine:"$9,000"}
+      ]},
+      {pc:"1012", name:"Attempted Murder", desc:"A willful, premeditated attempt to unlawfully kill someone that fails, is prevented, or is intercepted.", tiers:[
+        {label:"Standard", cls:"Felony", months:"50 mo", fine:"$7,500"},
+        {label:"Government Employee", cls:"Felony", months:"55 mo", fine:"$9,500"},
+        {label:"Judiciary Member", cls:"Felony", months:"75 mo", fine:"$15,000"}
+      ]},
+      {pc:"1013", name:"Attempted Mass Murder", desc:"A willful attempt to kill 5 or more people in a single incident or coordinated attack. Excludes gang-related violence.", tiers:[
+        {label:"Standard", cls:"Felony", months:"60 mo", fine:"$10,000"},
+        {label:"Government Employees", cls:"Felony", months:"65 mo", fine:"$12,000"}
+      ]},
+      {pc:"1014", name:"Torture", desc:"Deliberately inflicting severe physical or mental pain, injury, or suffering.", tiers:[{label:"", cls:"Capital Offense", months:"HUT", fine:"—"}]},
+      {pc:"1015", name:"Manslaughter", desc:"Involuntary: unintentionally killing via a reckless/negligent act or a non-felony crime. Voluntary: intentionally killing without premeditation, amid a reckless act or traumatic confrontation.", tiers:[
+        {label:"Involuntary", cls:"Felony", months:"1 yr", fine:"$50,000"},
+        {label:"Voluntary", cls:"Felony", months:"HUT", fine:"—"}
+      ]},
+      {pc:"1016", name:"Vehicular Manslaughter", desc:"Unintentionally killing someone through the reckless or negligent use of a vehicle.", tiers:[{label:"", cls:"Felony", months:"3 yrs", fine:"$75,000"}]},
+      {pc:"1017", name:"Second Degree Murder", desc:"Unlawfully and deliberately killing someone with malice aforethought, but without premeditation. Accessories after the fact carry the same classification.", tiers:[
+        {label:"Standard / Accessory", cls:"Capital Offense", months:"HUT", fine:"—"},
+        {label:"Government Employee / Accessory", cls:"Capital Offense", months:"HUT", fine:"—"},
+        {label:"Judiciary Member / Accessory", cls:"Capital Offense", months:"HUT", fine:"—"}
+      ]},
+      {pc:"1018", name:"First Degree Murder", desc:"Premeditated killing, or killing during arson, kidnapping, robbery, human trafficking, carjacking, CDS manufacturing, or another serious crime. Accessories after the fact carry the same classification.", tiers:[
+        {label:"Standard / Accessory", cls:"Capital Offense", months:"HUT", fine:"—"},
+        {label:"Government Employee / Accessory", cls:"Capital Offense", months:"HUT", fine:"—"},
+        {label:"Judiciary Member / Accessory", cls:"Capital Offense", months:"HUT", fine:"—"}
+      ]},
+      {pc:"1019", name:"Cannibalism", desc:"Intentionally ingesting human flesh, blood, or organs. Only defensible under extreme, life-threatening survival conditions.", tiers:[{label:"Standard / Accessory", cls:"Capital Offense", months:"HUT", fine:"—"}]},
+      {pc:"1020", name:"Gang Related Violence", desc:"Participating in violent acts furthering gang activity — drive-bys, attacks on rivals, retaliatory shootings, or intimidation of other groups.", tiers:[{label:"", cls:"Felony", months:"30 mo", fine:"$5,000"}]}
+    ]},
+
+    { title:"Title 2 — Offenses Involving Theft", items:[
+      {pc:"2001", name:"Petty Theft", desc:"Stealing property worth less than $5,000 from a person or business.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$1,250"}]},
+      {pc:"2002", name:"Grand Theft", desc:"Stealing property worth $5,000 or more from a person or business.", tiers:[{label:"", cls:"Felony", months:"25 mo", fine:"$2,000"}]},
+      {pc:"2003", name:"Grand Theft Auto (A)", desc:"Unlawfully taking or driving another's vehicle without consent, temporarily or permanently depriving the owner of it.", tiers:[{label:"", cls:"Felony", months:"20 mo", fine:"$2,000"}]},
+      {pc:"2004", name:"Grand Theft Auto (B)", desc:"Unlawfully taking a government-issued vehicle (law enforcement, EMS, military) without authorization.", tiers:[{label:"", cls:"Felony", months:"35 mo", fine:"$3,500"}]},
+      {pc:"2005", name:"Carjacking", desc:"Taking a vehicle by force, intimidation, or threat of harm, including forcing occupants out against their will.", tiers:[{label:"", cls:"Felony", months:"30 mo", fine:"$2,000"}]},
+      {pc:"2006", name:"Burglary", desc:"Unlawfully entering, breaking into, or hiding in a building, vehicle, or habitation intending to commit theft or another crime inside.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$1,250"}]},
+      {pc:"2007", name:"Robbery", desc:"Unlawfully taking property or goods from the listed locations; degree depends on which location was hit.", tiers:[
+        {label:"3rd Degree — gas stations, ATMs, IAA, dwellings/vehicles", cls:"Felony", months:"20 mo", fine:"$2,000"},
+        {label:"2nd Degree — CoC businesses, containers, art institution, Fleeca, Vangelico's", cls:"Felony", months:"25 mo", fine:"$3,500"},
+        {label:"1st Degree — Gruppe Sechs, Blaine County Savings, Pacific Standard", cls:"Felony", months:"35 mo", fine:"$5,000"}
+      ]},
+      {pc:"2008", name:"Aggravated Robbery", desc:"Same locations as Robbery, but while possessing or threatening use of a firearm/weapon that endangers life.", tiers:[
+        {label:"3rd Degree", cls:"Felony", months:"30 mo", fine:"$3,500"},
+        {label:"2nd Degree", cls:"Felony", months:"35 mo", fine:"$5,000"},
+        {label:"1st Degree", cls:"Felony", months:"45 mo", fine:"$7,500"}
+      ]},
+      {pc:"2009", name:"Leaving Without Paying", desc:"Obtaining services by deception, force, or threat without compensating the provider.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$1,000"}]},
+      {pc:"2010", name:"Possession of Nonlegal or Stolen Currency", desc:"Possessing money known to be stolen from a financial institution, armored vehicle, or secured location.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$1,000"}]},
+      {pc:"2011", name:"Possession of Government-Issued Items", desc:"Possessing non-weapon items issued exclusively to SASP/state employees — GPS trackers, IFAKs, ballistic shields, spike strips, etc. Doesn't cover police firearms.", tiers:[{label:"", cls:"Felony", months:"25 mo", fine:"$5,000"}]},
+      {pc:"2012", name:"Possession of Items Used in a Crime", desc:"Possessing items that aided a Title 2 offense (cards, laptops, blowtorches, lockpicks) or operating a still. Doesn't cover weapons.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$500"}]},
+      {pc:"2013", name:"Sale of Items Used in a Crime", desc:"Unlawfully selling items that could aid a crime (SD cards, laptops, blowtorches, lockpicks) to an unauthorized person or business.", tiers:[{label:"", cls:"Felony", months:"15 mo", fine:"$1,000"}]}
+    ]},
+
+    { title:"Title 3 — Offenses Involving Fraud", items:[
+      {pc:"3001", name:"Impersonation", desc:"Falsely representing yourself as another person, a government employee, a peace officer/public servant, or a judiciary member to defraud, deceive, or gain access/authority.", tiers:[
+        {label:"Standard", cls:"Misdemeanor", months:"15 mo", fine:"$1,250"},
+        {label:"Government Employee", cls:"Felony", months:"20 mo", fine:"$2,500"},
+        {label:"Peace Officer / Public Servant", cls:"Felony", months:"25 mo", fine:"$5,000"},
+        {label:"Judiciary Member", cls:"Felony", months:"40 mo", fine:"$10,000"}
+      ]},
+      {pc:"3002", name:"Possession of Stolen Identification", desc:"Unlawfully possessing or fraudulently using someone else's ID, or a government employee's badge/ID.", tiers:[
+        {label:"Standard", cls:"Misdemeanor", months:"10 mo", fine:"$1,000"},
+        {label:"Government ID", cls:"Misdemeanor", months:"20 mo", fine:"$2,500"}
+      ]},
+      {pc:"3003", name:"Extortion", desc:"Coercing, threatening, or pressuring someone for money/property/services/advantage against their will. Covers blackmail, protection schemes, and hostile buyouts.", tiers:[
+        {label:"Standard", cls:"Felony", months:"20 mo", fine:"$2,000"},
+        {label:"Aggravated (with violence)", cls:"Felony", months:"35 mo", fine:"$3,500"},
+        {label:"Corporate (\"Greenmail\")", cls:"Felony", months:"25 mo", fine:"$2,500"}
+      ]},
+      {pc:"3004", name:"Fraud", desc:"Knowingly defrauding someone via false or fraudulent pretense for money, labor, or property.", tiers:[
+        {label:"Standard", cls:"Misdemeanor", months:"10 mo", fine:"$2,500"},
+        {label:"Grand (over $100k or multiple victims)", cls:"Felony", months:"25 mo", fine:"$7,500"}
+      ]},
+      {pc:"3005", name:"Forgery", desc:"Possessing or creating knowingly false financial records, contracts, IDs, or government documents.", tiers:[{label:"", cls:"Misdemeanor", months:"15 mo", fine:"$1,500"}]},
+      {pc:"3006", name:"Money Laundering", desc:"Making money from criminal activity appear to come from a legitimate source.", tiers:[
+        {label:"3rd Degree — ≤ $10,000", cls:"Felony", months:"20 mo", fine:"$2,500"},
+        {label:"2nd Degree — $10,001–$50,000", cls:"Felony", months:"50 mo", fine:"$5,000"},
+        {label:"1st Degree — $50,001+", cls:"Felony", months:"75 mo", fine:"$10,000"}
+      ]},
+      {pc:"3007", name:"Unauthorized Commercial Sales", desc:"Selling/distributing legal goods through unauthorized or unlicensed channels, evading taxes/licensing. Doesn't cover private individual sales.", tiers:[{label:"", cls:"Felony", months:"25 mo", fine:"$5,000"}]},
+      {pc:"3008", name:"Trafficking in Illegal Goods or Counterfeit Currency", desc:"Trading, selling, or distributing illegal goods, stolen property, counterfeit items, or unregistered firearms through unregulated markets for profit.", tiers:[{label:"", cls:"Felony", months:"50 mo", fine:"$10,000"}]},
+      {pc:"3009", name:"Tax Evasion", desc:"Evading a state-imposed tax.", tiers:[
+        {label:"Misdemeanor — up to $20,000", cls:"Misdemeanor", months:"SACOR discretion", fine:"up to 30% asset forfeiture"},
+        {label:"Felony — over $20,000", cls:"Felony", months:"SACOR discretion", fine:"full asset freeze/forfeiture + audit"}
+      ]}
+    ]},
+
+    { title:"Title 4 — Offenses Involving Damage to Property", items:[
+      {pc:"4001", name:"Trespassing", desc:"Willfully entering or remaining on private, restricted, or government property without permission or after being told to leave.", tiers:[
+        {label:"Standard", cls:"Misdemeanor", months:"10 mo", fine:"$1,000"},
+        {label:"Aggravated (with a weapon)", cls:"Felony", months:"20 mo", fine:"$2,000"},
+        {label:"Felony (government property)", cls:"Felony", months:"25 mo", fine:"$3,000"}
+      ]},
+      {pc:"4002", name:"Obstructing a Business Establishment", desc:"Interfering with a lawful business by obstructing/intimidating it or its customers, or refusing to leave when asked.", tiers:[{label:"", cls:"Misdemeanor", months:"15 mo", fine:"$1,500"}]},
+      {pc:"4003", name:"Burning", desc:"Recklessly causing a fire without intent to damage (Reckless Burning), or willfully/maliciously starting one to damage property or burn a person/animal/structure (Arson).", tiers:[
+        {label:"Reckless Burning", cls:"Misdemeanor", months:"15 mo", fine:"$1,500"},
+        {label:"Arson", cls:"Felony", months:"25 mo", fine:"$4,500"}
+      ]},
+      {pc:"4004", name:"Vandalism", desc:"Intentionally defacing, destroying, or damaging property that isn't yours.", tiers:[
+        {label:"Standard", cls:"Misdemeanor", months:"5 mo", fine:"$1,000"},
+        {label:"Burial Site", cls:"Misdemeanor", months:"10 mo", fine:"$2,000"},
+        {label:"Government Property", cls:"Felony", months:"25 mo", fine:"$3,500"}
+      ]},
+      {pc:"4005", name:"Littering", desc:"Knowingly discarding waste, garbage, or hazardous materials in a public or private area without proper disposal.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$500"}]},
+      {pc:"4006", name:"Damaging or Obstructing a Communication Device", desc:"Maliciously removing, damaging, or obstructing a wireless device to prevent someone from summoning help or reporting a crime.", tiers:[{label:"", cls:"Misdemeanor", months:"5 mo", fine:"$1,250"}]},
+      {pc:"4007", name:"Destruction of Phone, Electrical, or Utility Lines", desc:"Maliciously disconnecting, cutting, or damaging phone, cable, or electrical lines.", tiers:[{label:"", cls:"Misdemeanor", months:"15 mo", fine:"$2,500"}]},
+      {pc:"4008", name:"Misappropriation of Lost Property", desc:"Finding lost property with a way to identify the owner, and keeping it without reasonable effort to return it.", tiers:[
+        {label:"Under $1,000", cls:"Misdemeanor", months:"10 mo", fine:"$1,000"},
+        {label:"$1,000 or more", cls:"Felony", months:"20 mo", fine:"$2,000"}
+      ]}
+    ]},
+
+    { title:"Title 5 — Offenses Against Public Administration", items:[
+      {pc:"5001", name:"Bribery of a Government Official", desc:"Offering a benefit to a public servant to influence their official vote, judgment, or action.", tiers:[{label:"", cls:"Felony", months:"20 mo", fine:"$3,500"}]},
+      {pc:"5002", name:"Unauthorized Face Covering", desc:"Wearing a face covering that obstructs ID in a government building/institution, or refusing to remove it during a lawful investigation.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$1,250"}]},
+      {pc:"5003", name:"Possession of Contraband in a Government Facility", desc:"Possessing a weapon, controlled substance, explosives, or crime-related items in a government facility (excluding Bolingbroke).", tiers:[{label:"", cls:"Felony", months:"15 mo", fine:"$1,500"}]},
+      {pc:"5004", name:"Smuggling Items into a Government Facility", desc:"Smuggling unauthorized items into a government facility (excluding Bolingbroke), including to another confined person.", tiers:[{label:"", cls:"Felony", months:"25 mo", fine:"$3,000"}]},
+      {pc:"5005", name:"Criminal Possession of Stolen Property", desc:"Possessing property reported stolen or reasonably believed to be stolen.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$750"}]},
+      {pc:"5006", name:"Escaping Custody", desc:"Escaping or attempting to escape the custody of law enforcement, a judge, or a government agency.", tiers:[{label:"", cls:"Felony", months:"15 mo", fine:"$1,000"}]},
+      {pc:"5007", name:"Jailbreak", desc:"Removing yourself or someone else from official detention without authority, or failing to return from temporary leave; also applies if complicit in your own removal.", tiers:[{label:"", cls:"Felony", months:"60 mo", fine:"$6,000"}]},
+      {pc:"5008", name:"Perjury / Subornation of Perjury", desc:"Knowingly lying under oath about a material fact (Perjury), or persuading someone else to do so (Subornation).", tiers:[{label:"Both", cls:"Felony", months:"Judge discretion", fine:"—"}]},
+      {pc:"5009", name:"Filing a False Report by a Law Enforcement Officer", desc:"An officer knowingly making a false statement in an official report; severity depends on whether it substantially affects the case.", tiers:[
+        {label:"Misdemeanor — minor fact", cls:"Misdemeanor", months:"20 mo", fine:"$5,000"},
+        {label:"Felony — material fact", cls:"Felony", months:"60 mo", fine:"$15,000"}
+      ]},
+      {pc:"5010", name:"Violation of a Restraining Order", desc:"Willfully disobeying a lawful restraining order. Repeat violations on the same order escalate.", tiers:[
+        {label:"1st & 2nd offense", cls:"Felony", months:"20 mo", fine:"$2,500"},
+        {label:"3rd offense or higher", cls:"Felony", months:"HUT", fine:"—"}
+      ]},
+      {pc:"5011", name:"Embezzlement", desc:"Fraudulently appropriating business or government-granted funds entrusted to you for personal or criminal use.", tiers:[{label:"", cls:"Felony", months:"45 mo", fine:"$10,000"}]},
+      {pc:"5012", name:"Unlawful Practice", desc:"Practicing law or medicine without required qualifications, licenses, or certifications.", tiers:[{label:"", cls:"Felony", months:"20 mo", fine:"$5,000"}]},
+      {pc:"5013", name:"Misuse of Emergency Systems", desc:"Requesting emergency response with no good-faith basis, or falsely reporting a crime.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$1,000"}]},
+      {pc:"5014", name:"Conspiracy", desc:"Conspiring with others to commit a crime, where at least one person commits an overt act toward it.", tiers:[
+        {label:"Misdemeanor conspiracy", cls:"Misdemeanor", months:"10 mo", fine:"$1,000"},
+        {label:"Felony conspiracy", cls:"Felony", months:"20 mo", fine:"$2,500"}
+      ]},
+      {pc:"5015", name:"Violating a Court Order", desc:"Willfully disobeying a court order — subpoena, search/seizure, settlement, NDA, plea deal, cease and desist.", tiers:[
+        {label:"Misdemeanor", cls:"Misdemeanor", months:"Judge discretion", fine:"—"},
+        {label:"Felony (aggravated/threatening)", cls:"Felony", months:"Judge discretion", fine:"—"}
+      ]},
+      {pc:"5016", name:"Failure to Appear", desc:"Willfully failing to appear in court after being properly notified, without a valid excuse.", tiers:[{label:"", cls:"Misdemeanor", months:"Judge discretion", fine:"—"}]},
+      {pc:"5017", name:"Contempt of Court", desc:"Disorderly conduct in court, publishing a false report of proceedings, or refusing to be sworn in/answer as a witness.", tiers:[
+        {label:"Misdemeanor", cls:"Misdemeanor", months:"Judge discretion", fine:"—"},
+        {label:"Felony (aggravated/repeat)", cls:"Felony", months:"Judge discretion", fine:"—"}
+      ]},
+      {pc:"5018", name:"Resisting Arrest", desc:"Using force or fleeing to prevent arrest, cuffing, or being taken into custody.", tiers:[{label:"", cls:"Misdemeanor", months:"5 mo", fine:"$750"}]},
+      {pc:"5019", name:"Malfeasance", desc:"A government employee acting with no legal authority, through ignorance, inattention, or malice — charged only by the State Attorney's Office.", tiers:[{label:"", cls:"Felony", months:"45 mo", fine:"$10,000"}]},
+      {pc:"5020", name:"Operating Without a Permit", desc:"Operating an event without prior approval or license from an authorized government entity.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$2,500"}]},
+      {pc:"5021", name:"Operating an Unlicensed Business", desc:"Operating a business without proper approval/licensure — requires State Attorney's Office approval to charge.", tiers:[{label:"", cls:"Felony", months:"30 mo", fine:"$10,000"}]}
+    ]},
+
+    { title:"Title 6 — Offenses Against Public Order", items:[
+      {pc:"6001", name:"Disobeying a Peace Officer", desc:"Willfully refusing to comply with a lawful order, signal, or direction from law enforcement.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$750"}]},
+      {pc:"6002", name:"Disorderly Conduct", desc:"Engaging in behavior intending to cause public inconvenience.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$1,000"}]},
+      {pc:"6003", name:"Disturbing the Peace", desc:"Fighting or challenging someone to fight in public, unreasonable loud noise, or offensive words likely to provoke violence.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$1,500"}]},
+      {pc:"6004", name:"Harassment", desc:"Aggressively intimidating or pressuring someone with unwelcome words, deeds, or gestures. +$500 per continued occurrence.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$1,000"}]},
+      {pc:"6005", name:"Obstruction of Justice", desc:"Hindering the discovery, apprehension, conviction, or punishment of someone who committed a crime.", tiers:[
+        {label:"Misdemeanor — reckless/negligent", cls:"Misdemeanor", months:"15 mo", fine:"$2,000"},
+        {label:"Felony — intentional", cls:"Felony", months:"35 mo", fine:"$5,000"}
+      ]},
+      {pc:"6006", name:"Inciting a Riot", desc:"Organizing an assembly of 4+ people that results in violent conduct or risks public harm.", tiers:[{label:"", cls:"Felony", months:"25 mo", fine:"$3,000"}]},
+      {pc:"6007", name:"Loitering on Government Properties", desc:"Idly standing or waiting without purpose at a listed government property (PDs, hospitals, Bolingbroke, courthouse).", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$2,500"}]},
+      {pc:"6008", name:"Tampering", desc:"Unauthorized access to devices/accounts (hacking), tampering with a vehicle, destroying/concealing evidence, or using force/threats against a witness.", tiers:[
+        {label:"Standard / electronic", cls:"Misdemeanor", months:"10 mo", fine:"$1,000"},
+        {label:"Vehicle", cls:"Misdemeanor", months:"15 mo", fine:"$2,500"},
+        {label:"Evidence", cls:"Felony", months:"30 mo", fine:"$5,000"},
+        {label:"Witness", cls:"Felony", months:"HUT", fine:"—"}
+      ]},
+      {pc:"6009", name:"Falsifying Business Records", desc:"Knowingly falsifying, altering, or fabricating business records to deceive or defraud.", tiers:[{label:"", cls:"Felony", months:"25 mo", fine:"$2,500"}]},
+      {pc:"6010", name:"Failure to Provide Identification", desc:"Refusing to provide government ID to law enforcement when there's reason to request it.", tiers:[{label:"", cls:"Misdemeanor", months:"15 mo", fine:"$1,500"}]},
+      {pc:"6011", name:"Vigilantism", desc:"Taking the law into your own hands — punishing, detaining, or acting against someone without legal authority.", tiers:[{label:"", cls:"Felony", months:"30 mo", fine:"$3,500"}]},
+      {pc:"6012", name:"Unlawful Assembly", desc:"Participating in a 3+ person public assembly intending an illegal act, disruption, or violence.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$1,000"}]},
+      {pc:"6013", name:"Government Corruption", desc:"A government employee acting outside the public interest with criminal negligence for personal gain — requires SAO approval.", tiers:[{label:"", cls:"Capital Offense", months:"HUT", fine:"—"}]},
+      {pc:"6014", name:"Stalking", desc:"Repeatedly, willfully following or harassing someone, causing fear or emotional distress.", tiers:[{label:"", cls:"Felony", months:"40 mo", fine:"$7,500"}]},
+      {pc:"6015", name:"Harboring a Fugitive", desc:"Knowingly concealing, sheltering, or assisting a wanted individual to help them evade law enforcement.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$2,500"}]}
+    ]},
+
+    { title:"Title 7 — Offenses Against Health and Morals", items:[
+      {pc:"7001", name:"Possession of Controlled/Dangerous Substance", desc:"Possessing a CDS without valid prescription; degree depends on quantity (1 blunt/joint/bag = 1 marijuana unit).", tiers:[
+        {label:"3rd Degree — 1–4 CDS / 31–42 marijuana", cls:"Misdemeanor", months:"10 mo", fine:"$1,000"},
+        {label:"2nd Degree — 5–10 CDS / 43–80 marijuana", cls:"Felony", months:"25 mo", fine:"$2,500"},
+        {label:"1st Degree — 11+ CDS / 81+ marijuana", cls:"Felony", months:"35 mo", fine:"$5,000"}
+      ]},
+      {pc:"7002", name:"Cultivation/Production of CDS", desc:"Manufacturing, or intent to manufacture, any CDS (except marijuana), or growing more than 6 marijuana plants.", tiers:[{label:"", cls:"Felony", months:"45 mo", fine:"$7,500"}]},
+      {pc:"7003", name:"Sale of CDS", desc:"Unlawfully selling any controlled/dangerous substance or untaxed alcohol.", tiers:[{label:"", cls:"Felony", months:"35 mo", fine:"$4,500"}]},
+      {pc:"7004", name:"Drug Trafficking", desc:"Manufacturing, selling, delivering, or possessing with intent to distribute CDS/marijuana/untaxed alcohol above trafficking thresholds; also covers illegal prescription drug sales.", tiers:[
+        {label:"3rd Degree — 101–200 CDS / 301–600 buds / 31–50 alcohol", cls:"Felony", months:"75 mo", fine:"$20,000"},
+        {label:"2nd Degree — 201–700 CDS / 601–2100 buds / 51–100 alcohol", cls:"Felony", months:"100 mo", fine:"$30,000"},
+        {label:"1st Degree — 701+ CDS / 2101+ buds / 101+ alcohol", cls:"Capital Offense", months:"200 mo", fine:"$50,000"}
+      ]},
+      {pc:"7005", name:"Possession of Human Remains", desc:"Possessing detached body parts, organs, bones, or other human remains without lawful authority.", tiers:[{label:"", cls:"Felony", months:"15 mo", fine:"$3,500"}]},
+      {pc:"7006", name:"Desecration of a Human Corpse", desc:"Dismembering, disfiguring, mutilating, or burning a corpse outside lawful forensic/medical procedure.", tiers:[{label:"", cls:"Capital Offense", months:"HUT", fine:"—"}]},
+      {pc:"7007", name:"Pimping and Pandering", desc:"Causing, compelling, or procuring someone to engage in prostitution.", tiers:[{label:"", cls:"Felony", months:"25 mo", fine:"$1,250"}]},
+      {pc:"7008", name:"Prostitution", desc:"Offering or paying for prostitution services.", tiers:[{label:"", cls:"Misdemeanor", months:"20 mo", fine:"$750"}]},
+      {pc:"7009", name:"Illegal Gambling", desc:"Wagering or facilitating wagering on an uncertain event's outcome for gain.", tiers:[{label:"", cls:"Felony", months:"20 mo", fine:"$1,000"}]},
+      {pc:"7010", name:"Aggressive Panhandling", desc:"Aggressively soliciting money or donations via badgering, threats, or intimidation.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$500"}]},
+      {pc:"7011", name:"Public Intoxication", desc:"Being under the influence of alcohol or CDS in a public place.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$1,000"}]},
+      {pc:"7012", name:"Public Indecency", desc:"Willfully exposing oneself in public or where others may be offended.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$3,500"}]},
+      {pc:"7013", name:"Solicitation of a Crime", desc:"Requesting, paying, coercing, or encouraging someone to commit or be an accomplice to a crime.", tiers:[{label:"", cls:"Felony", months:"35 mo", fine:"$5,000"}]},
+      {pc:"7014", name:"Obstructing Emergency Services", desc:"Hindering medical or fire personnel in performing their duties.", tiers:[{label:"", cls:"Felony", months:"20 mo", fine:"$2,500"}]},
+      {pc:"7015", name:"Tainting of Food, Drink, Medicine, or Water", desc:"Willfully mixing poison/harmful substances into food, drink, medicine, or water, or falsely claiming to have done so.", tiers:[{label:"", cls:"Misdemeanor", months:"15 mo", fine:"$2,500"}]},
+      {pc:"7016", name:"Bootlegging", desc:"Manufacturing, distilling, or possessing untaxed alcohol without a valid license. Manufacture/distillation counts regardless of quantity.", tiers:[
+        {label:"3rd Degree — 6–10 units", cls:"Misdemeanor", months:"10 mo", fine:"$1,000"},
+        {label:"2nd Degree — 11–30 units", cls:"Felony", months:"25 mo", fine:"$2,000"},
+        {label:"1st Degree — 31+ units", cls:"Felony", months:"35 mo", fine:"$4,500"}
+      ]}
+    ]},
+
+    { title:"Title 8 — Offenses Against Public Safety", items:[
+      {pc:"8001", name:"Brandishing a Weapon", desc:"Drawing/exhibiting a deadly weapon in someone's presence without a self-defense justification. Holstered/slung open carry doesn't count.", tiers:[{label:"", cls:"Misdemeanor", months:"5 mo", fine:"$1,500"}]},
+      {pc:"8002", name:"Unlawful Discharge of a Stun Gun or Deleterious Agent", desc:"Discharging a stun gun, bean bag, tear gas, or similar agent against someone without cause — especially an on-duty Government Employee.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$1,000"}]},
+      {pc:"8003", name:"Negligent Discharge of a Firearm", desc:"Negligently discharging a firearm in a way that could injure someone or damage property.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$1,250"}]},
+      {pc:"8004", name:"Criminal Discharge of a Firearm from a Vehicle", desc:"Willfully/maliciously discharging a firearm at a person or dwelling from a vehicle; injury isn't required, just the risk.", tiers:[{label:"", cls:"Felony", months:"25 mo", fine:"$2,000"}]},
+      {pc:"8005", name:"Unlawful Possession of Ammunition", desc:"Possessing ammunition while prohibited from owning a firearm (charged only when the weapon itself isn't possessed).", tiers:[{label:"", cls:"Felony", months:"5 mo", fine:"$750"}]},
+      {pc:"8006", name:"Criminal Possession of a Weapon", desc:"Possessing a weapon of the given class without a proper license, registration, or legal vendor purchase.", tiers:[
+        {label:"Class 1", cls:"Felony", months:"10 mo", fine:"$1,500"},
+        {label:"Class 2", cls:"Felony", months:"15 mo", fine:"$3,000"},
+        {label:"Class 3", cls:"Felony", months:"25 mo", fine:"$7,000"},
+        {label:"Class 4", cls:"Felony", months:"35 mo", fine:"$20,000"},
+        {label:"Class 5", cls:"Felony", months:"45 mo", fine:"$30,000"}
+      ]},
+      {pc:"8007", name:"Criminal Possession of a Police Weapon", desc:"Possessing a government-issued weapon without proper license, registration, or state-employee authorization.", tiers:[
+        {label:"Class 1", cls:"Felony", months:"40 mo", fine:"$20,000"},
+        {label:"Class 2", cls:"Felony", months:"60 mo", fine:"$40,000"},
+        {label:"Class 3", cls:"Felony", months:"90 mo", fine:"$80,000"}
+      ]},
+      {pc:"8008", name:"Possession of Illegal Weapon Modification Device", desc:"Possessing a device that illegally alters a weapon — full-auto/burst converters, suppressors, extended magazines, removable optics.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$1,000"}]},
+      {pc:"8009", name:"Criminal Possession of an Explosive or Incendiary Device", desc:"Possessing, owning, or controlling any incendiary or explosive device.", tiers:[{label:"", cls:"Felony", months:"20 mo", fine:"$2,500"}]},
+      {pc:"8010", name:"Criminal Sale of an Explosive or Incendiary Device", desc:"Selling, purchasing, or exchanging an explosive or incendiary device.", tiers:[{label:"", cls:"Felony", months:"35 mo", fine:"$6,500"}]},
+      {pc:"8011", name:"Stockpiling of Explosive or Incendiary Devices", desc:"Possessing 5 or more incendiary/explosive devices on person or property.", tiers:[{label:"", cls:"Felony", months:"40 mo", fine:"$7,500"}]},
+      {pc:"8012", name:"Trafficking of Explosive or Incendiary Devices", desc:"Manufacturing, selling, delivering, or intending to distribute explosive/incendiary devices above trafficking thresholds.", tiers:[
+        {label:"2nd Degree — 7+", cls:"Felony", months:"1 yr", fine:"$30,000"},
+        {label:"1st Degree — 10+", cls:"Capital Offense", months:"HUT", fine:"—"}
+      ]},
+      {pc:"8013", name:"Criminal Use of Explosives or Incendiary Device", desc:"Placing, using, or detonating an explosive/incendiary device against a person or property, or using it to intimidate/terrify.", tiers:[{label:"", cls:"Felony", months:"60 mo", fine:"$7,500"}]},
+      {pc:"8014", name:"Criminal Use of a Weapon", desc:"Aiming, firing, or displaying a weapon to intimidate/coerce or cause injury, outside self-defense.", tiers:[
+        {label:"Standard", cls:"Felony", months:"10 mo", fine:"$3,000"},
+        {label:"At a Government Facility", cls:"Felony", months:"35 mo", fine:"$3,500"}
+      ]},
+      {pc:"8015", name:"Criminal Sale of a Weapon", desc:"Selling, purchasing, or exchanging a weapon of the given class without proper licensure.", tiers:[
+        {label:"Class 1", cls:"Felony", months:"30 mo", fine:"$5,000"},
+        {label:"Class 2", cls:"Felony", months:"40 mo", fine:"$10,000"},
+        {label:"Class 3", cls:"Felony", months:"50 mo", fine:"$25,000"},
+        {label:"Class 4", cls:"Felony", months:"60 mo", fine:"$35,000"},
+        {label:"Class 5", cls:"Felony", months:"80 mo", fine:"$75,000"}
+      ]},
+      {pc:"8016", name:"Weapon Stockpiling", desc:"Possessing 6 or more Class 1–5 firearms on person or in one location, added on top of possession charges.", tiers:[{label:"", cls:"Felony", months:"30 mo", fine:"$5,000"}]},
+      {pc:"8017", name:"Weapon Trafficking", desc:"Illicit trade/sale/transport of contraband firearms, ammo, or accessories (incl. large bladed weapons); brokers and straw purchasers are also guilty.", tiers:[
+        {label:"3rd Degree — 5+", cls:"Felony", months:"1 yr", fine:"$25,000"},
+        {label:"2nd Degree — 10+", cls:"Felony", months:"3 yrs", fine:"$60,000"},
+        {label:"1st Degree — 20+", cls:"Capital Offense", months:"HUT", fine:"—"}
+      ]},
+      {pc:"8018", name:"Insurrection", desc:"Participating in or conspiring toward acts dangerous to life intended to alter/disrupt San Andreas's social, political, or economic order.", tiers:[{label:"", cls:"Capital Offense", months:"HUT", fine:"—"}]},
+      {pc:"8019", name:"Mayhem", desc:"Extreme violence or destruction directly endangering life regardless of motive — mass destruction, assassination, kidnapping, or reckless/indiscriminate acts.", tiers:[{label:"", cls:"Capital Offense", months:"HUT", fine:"—"}]}
+    ]},
+
+    { title:"Title 9 — Offenses Involving the Operation of a Motor Vehicle", items:[
+      {pc:"9001", name:"DUI", desc:"Operating a vehicle or bicycle while under the influence of drugs or alcohol.", tiers:[{label:"", cls:"Misdemeanor", months:"5 mo", fine:"$2,000", pts:"5"}]},
+      {pc:"9002", name:"Evading", desc:"Fleeing law enforcement on foot or in a vehicle; reckless tier applies when done with willful/wanton disregard for safety.", tiers:[
+        {label:"Standard", cls:"Misdemeanor", months:"5 mo", fine:"$1,500", pts:"2"},
+        {label:"Reckless", cls:"Felony", months:"10 mo", fine:"$2,500", pts:"5"}
+      ]},
+      {pc:"9003", name:"Failure to Yield to Emergency Vehicle", desc:"Failing to pull over or slow for an active emergency vehicle.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$750", pts:"2"}]},
+      {pc:"9004", name:"Failure to Obey Traffic Control Device", desc:"Disobeying a stop sign, light, yield sign, lane indicator, or regulatory sign.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$800", pts:"1"}]},
+      {pc:"9005", name:"Operation of a Nonfunctional Vehicle", desc:"Driving an unsafe vehicle (smashed windows, missing doors) that risks occupants or the public.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$800", pts:"2"}]},
+      {pc:"9006", name:"Operation of an Unroadworthy Vehicle", desc:"Driving without a visible license plate; the vehicle is impounded if within city limits.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$900", pts:"3"}]},
+      {pc:"9007", name:"Negligent Driving", desc:"Driving with a lack of proper regard for safety or basic traffic rules.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$750", pts:"2"}]},
+      {pc:"9008", name:"Reckless Driving", desc:"Driving with willful/wanton disregard for safety, likely to cause injury or death.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$1,250", pts:"2"}]},
+      {pc:"9009", name:"Speeding", desc:"Driving over the posted speed limit; severity scales with how far over.", tiers:[
+        {label:"3rd Degree — 1–25 mph over", cls:"Infraction", months:"0", fine:"$750", pts:"2"},
+        {label:"2nd Degree — 26–50 mph over", cls:"Infraction", months:"0", fine:"$1,000", pts:"4"},
+        {label:"1st Degree — 51–75 mph over (impound)", cls:"Misdemeanor", months:"5 mo", fine:"$1,500", pts:"8"},
+        {label:"Felony — 75+ mph over (impound)", cls:"Felony", months:"15 mo", fine:"$2,000", pts:"10"}
+      ]},
+      {pc:"9010", name:"Unlicensed Operation of Vehicle", desc:"Operating a vehicle without a proper/valid license, or without a valid physical government ID.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$750", pts:"2"}]},
+      {pc:"9011", name:"Illegal U-Turn", desc:"U-turning where prohibited, or crossing a yellow line to reverse direction mid-road.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$425", pts:"1"}]},
+      {pc:"9012", name:"Illegal Passing", desc:"Passing via shoulder, median, or solid lines, or interfering with oncoming traffic.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$450", pts:"2"}]},
+      {pc:"9013", name:"Failure to Maintain Lane", desc:"Failing to keep control of a vehicle within its lane.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$500", pts:"2"}]},
+      {pc:"9014", name:"Illegal Turn", desc:"Turning without a full stop, against posted signs, from the wrong lane, or against a \"turn only\" indicator.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$400", pts:"1"}]},
+      {pc:"9015", name:"Unauthorized Parking", desc:"Parking in fire lanes, red curbs, no-parking zones, handicap spots without authorization, sidewalks, or otherwise obstructing traffic.", tiers:[
+        {label:"Standard", cls:"Infraction", months:"0", fine:"$1,000"},
+        {label:"Government Property (impound)", cls:"Infraction", months:"0", fine:"$2,500"}
+      ]},
+      {pc:"9016", name:"Hit and Run", desc:"Leaving the scene of an accident you caused without giving identifying info or rendering aid.", tiers:[
+        {label:"Misdemeanor — property damage", cls:"Misdemeanor", months:"10 mo", fine:"$1,000", pts:"5"},
+        {label:"Felony — injury or death", cls:"Felony", months:"25 mo", fine:"$3,500", pts:"10"}
+      ]},
+      {pc:"9017", name:"Driving without Headlights", desc:"Failing to use headlights in low light.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$750", pts:"2"}]},
+      {pc:"9018", name:"Street Racing", desc:"Participating in an unsanctioned race on a public road; license/vehicle may be impounded.", tiers:[{label:"", cls:"Felony", months:"20 mo", fine:"$5,000", pts:"10"}]},
+      {pc:"9019", name:"Unlawful Use of a Motor Vehicle (Joyriding)", desc:"Taking a vehicle without consent, without intent to permanently deprive the owner of it.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$1,250"}]},
+      {pc:"9020", name:"Jaywalking", desc:"Crossing a road outside a designated crosswalk while ignoring traffic signals.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$250"}]},
+      {pc:"9021", name:"Improper Use of a Horn", desc:"Using a horn excessively or when not reasonably necessary for safety.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$200", pts:"1"}]},
+      {pc:"9022", name:"Driving an Unregistered Vehicle", desc:"Operating an unregistered vehicle on a public road; subject to impound.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$800", pts:"1"}]},
+      {pc:"9023", name:"Impeding Traffic", desc:"Illegally stopping on a road or driving intentionally slow to block normal traffic flow; vehicle subject to tow.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$600", pts:"1"}]},
+      {pc:"9024", name:"Driving on a Sidewalk", desc:"Operating a vehicle on a sidewalk except to enter/exit adjacent property.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$800", pts:"1"}]},
+      {pc:"9025", name:"Failure to Wear a Motorcycle Helmet", desc:"Riding a motorcycle (driver or passenger) without protective headgear while in motion.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$200", pts:"1"}]}
+    ]},
+
+    { title:"Title 10 — Offenses Involving the Well-Being of Wildlife", items:[
+      {pc:"10001", name:"Hunting In Restricted Areas", desc:"Hunting outside the defined boundaries of a hunting area.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$1,500"}]},
+      {pc:"10002", name:"Unlicensed Hunting or Fishing", desc:"Hunting or fishing without the appropriate license.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$1,500"}]},
+      {pc:"10003", name:"Hunting Outside of Hunting Hours", desc:"Hunting outside the legal window of 05:00–19:30.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$1,000"}]},
+      {pc:"10004", name:"Improper Storage of Fish", desc:"Not storing fish safely in a cooler or approved container for transport.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$500"}]},
+      {pc:"10005", name:"Hunting With A Non-Hunting Weapon", desc:"Using any firearm other than a hunting rifle to hunt.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$1,500"}]},
+      {pc:"10006", name:"Overhunting / Overfishing", desc:"Taking or possessing wildlife/fish in excess of SASP Fishing & Hunting Protocol limits.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$2,500"}]},
+      {pc:"10007", name:"Animal Cruelty", desc:"Maliciously or intentionally harming, injuring, or killing an animal.", tiers:[{label:"", cls:"Felony", months:"15 mo", fine:"$5,000"}]},
+      {pc:"10008", name:"Poaching", desc:"Unlawfully hunting, capturing, killing, transporting, or possessing protected/endangered species or their parts, per state conservation law.", tiers:[{label:"", cls:"Felony", months:"25 mo", fine:"$7,500"}]}
+    ]},
+
+    { title:"Title 11 — Offenses Involving Aircraft and Airspace", items:[
+      {pc:"11001", name:"Failure to Maintain Aircraft Radio", desc:"Failing to stay on the required 919.1 frequency during flight, or failing to respond to law enforcement/ATC.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$1,000"}]},
+      {pc:"11002", name:"Failure to Register Flight with Authorities", desc:"Failing to report a recreational flight via /311 before takeoff.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$500"}]},
+      {pc:"11003", name:"Landing in an Unsafe Area", desc:"Helicopter landing outside designated areas or within 75m of a road/residence/structure; fixed-wing must use runways; float planes must stay 75m from bridges/vessels/swimmers.", tiers:[{label:"", cls:"Misdemeanor", months:"10 mo", fine:"$1,500"}]},
+      {pc:"11004", name:"Flying an Unregistered Aircraft", desc:"Piloting an aircraft without valid registration (excludes properly-documented \"RENT\"/\"PEG\" rentals).", tiers:[{label:"", cls:"Misdemeanor", months:"15 mo", fine:"$1,500"}]},
+      {pc:"11005", name:"Flying Too Low", desc:"Flying below the minimum altitude — 1,500 ft over city limits, 750 ft over county areas.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$1,000"}]},
+      {pc:"11006", name:"Theft of an Aircraft", desc:"Unlawfully taking an aircraft without owner consent, for personal profit, purpose, or pleasure.", tiers:[
+        {label:"Standard", cls:"Felony", months:"25 mo", fine:"$2,500"},
+        {label:"Government Aircraft", cls:"Felony", months:"50 mo", fine:"$5,000"}
+      ]},
+      {pc:"11007", name:"Piloting without Proper License", desc:"Operating an aircraft without the required license.", tiers:[{label:"", cls:"Felony", months:"20 mo", fine:"$3,000"}]},
+      {pc:"11008", name:"Flying into Restricted Airspace", desc:"Flying in unauthorized airspace when not responding to an emergency.", tiers:[{label:"", cls:"Felony", months:"20 mo", fine:"$4,000"}]}
+    ]},
+
+    { title:"Title 12 — Offenses Relating to Prisons and Prisoners", items:[
+      {pc:"12001", name:"Possession or Manufacture of Weapons in Jail or Prison", desc:"A confined or in-transit person possessing/carrying a firearm, explosive, or makeshift weapon.", tiers:[{label:"", cls:"Felony", months:"20 mo", fine:"$3,000"}]},
+      {pc:"12002", name:"Bringing CDS into Jail or Prison", desc:"Bringing or attempting to bring a controlled/dangerous substance into a correctional facility.", tiers:[{label:"", cls:"Felony", months:"25 mo", fine:"$3,500"}]},
+      {pc:"12003", name:"Bringing Contraband into a Jail or Prison", desc:"Knowingly introducing unauthorized items — phones, electronics, tools — into a correctional facility.", tiers:[{label:"", cls:"Felony", months:"25 mo", fine:"$2,500"}]},
+      {pc:"12004", name:"Bringing Firearms, Deadly Weapons, or Explosives into Jail or Prison", desc:"Knowingly bringing a firearm, deadly weapon, or explosive into a correctional facility.", tiers:[{label:"", cls:"Felony", months:"60 mo", fine:"$15,000"}]},
+      {pc:"12005", name:"Bringing Alcohol Into a Jail or Prison", desc:"Knowingly bringing alcohol into a correctional facility without authorization.", tiers:[{label:"", cls:"Felony", months:"20 mo", fine:"$2,000"}]},
+      {pc:"12006", name:"Unlawful Communication With an Inmate", desc:"Communicating with, or passing items/writing to or from, a confined person without permission.", tiers:[{label:"", cls:"Infraction", months:"0", fine:"$1,000"}]},
+      {pc:"12007", name:"Possession of CDS in a Jail or Prison", desc:"Possessing a controlled/dangerous substance while incarcerated, without valid prescription.", tiers:[
+        {label:"3rd Degree — 1–4 units / 31–42 marijuana", cls:"Misdemeanor", months:"20 mo", fine:"$2,000"},
+        {label:"2nd Degree — 5–10 units / 43–80 marijuana", cls:"Felony", months:"50 mo", fine:"$5,000"},
+        {label:"1st Degree — 11–100 units / 81–300 marijuana", cls:"Felony", months:"70 mo", fine:"$10,000"}
+      ]},
+      {pc:"12008", name:"Inciting a Riot in a Jail or Prison", desc:"Organizing a 4+ person assembly in custody that results in violent conduct or risks public harm.", tiers:[{label:"", cls:"Felony", months:"50 mo", fine:"$6,000"}]},
+      {pc:"12009", name:"Burning in a Jail or Prison", desc:"Recklessly causing a fire (Reckless), or willfully/maliciously starting one to cause damage (Arson), inside a facility.", tiers:[
+        {label:"Reckless", cls:"Misdemeanor", months:"30 mo", fine:"$3,000"},
+        {label:"Arson", cls:"Felony", months:"50 mo", fine:"$9,000"}
+      ]},
+      {pc:"12010", name:"Misuse of Emergency Systems While Incarcerated", desc:"Requesting emergency response with no real emergency, or falsely reporting a crime, while incarcerated.", tiers:[{label:"", cls:"Misdemeanor", months:"20 mo", fine:"$2,000"}]},
+      {pc:"12011", name:"Possession of Contraband in Jail or Prison", desc:"Possessing a weapon, controlled substance, explosives, or crime-conspiracy items while in a correctional facility.", tiers:[{label:"", cls:"Felony", months:"30 mo", fine:"$5,000"}]}
+    ]}
+  ],
+
+  defGroups: [
+    { title:"Title A — Sentencing", items:[
+      {term:"P.C. 1101 Infraction", body:"A violation punishable by a fine only, no imprisonment."},
+      {term:"P.C. 1102 Misdemeanor", body:"A violation punishable by fine and imprisonment, usually no more than 20 months."},
+      {term:"P.C. 1103 Wobbler", body:"A charge that may be filed as either a misdemeanor or a felony, depending on the circumstances and the suspect's criminal history."},
+      {term:"P.C. 1104 Felony", body:"A more serious crime, typically involving violence, usually punishable by more than 20 months."},
+      {term:"P.C. 1105 Capital Offense", body:"A crime treated seriously enough to carry possible life imprisonment; expungement eligibility is reviewed at a Justice's discretion."},
+      {term:"P.C. 1106 Accessory After The Fact", body:"Helping someone evade apprehension, trial, or punishment after a crime. Charged at half the time and fine of the crime aided."},
+      {term:"P.C. 1107 Aiding and Abetting", body:"Intentionally helping someone commit a crime before it's complete. Charged at the full time and fine of the crime aided."},
+      {term:"P.C. 1108 Sentencing — HUT", body:"Hold Until Trial. The charges must be reviewed in a San Andreas State court."},
+      {term:"P.C. 1109 Sentencing — SACOR Discretion", body:"The San Andreas Chamber of Oversight and Reform has ultimate decision-making power in these circumstances."},
+      {term:"P.C. 1110 Sentencing — Month", body:"OOC: 1 month is equivalent to 1 real-world minute."},
+      {term:"P.C. 1111 Sentencing — Year", body:"OOC: 1 year is equivalent to 1 real-world day (entered in the equivalent number of months on the MDT)."}
+    ]},
+    { title:"Title B — Definitions", items:[
+      {term:"P.C. 1200 Class 0-a Weapon", body:"Bladed/improvised melee — broken bottle, butterfly knife, candycane, dagger, hatchet, katana, knife, machete, screwdriver, switchblade, tiger blade, etc."},
+      {term:"P.C. 1201 Class 0-b Weapon", body:"Blunt melee — bat, baton, brass knuckles, crowbar, hammer, golf club, nightstick, wrench, smoke grenade, flare, snowball, etc."},
+      {term:"P.C. 1202 Class 1 Weapon", body:"Basic sidearms — bean bag gun, Glock 17, revolvers, hunting rifle, M1911, pepper spray, stun gun, paintball gun, etc."},
+      {term:"P.C. 1203 Class 2 Weapon", body:"Upgraded pistols/SMGs — Desert Eagle, MP5, Uzi, Tech 9, sawn-off shotgun, Glock 18C/20, P90, etc."},
+      {term:"P.C. 1204 Class 3 Weapon", body:"Rifles — AK-47, Carbine Rifle, M16, Special Carbine, Molotov, Advanced/Tactical Rifle, etc."},
+      {term:"P.C. 1205 Class 4 Weapon", body:"Combat MG, M249, M60, M700, Precision Rifle."},
+      {term:"P.C. 1206 Class 5 Weapon", body:"Fireworks Launcher, Flamethrower, Sticky Bomb."},
+      {term:"P.C. 1207 CDS", body:"Controlled/dangerous substances — cocaine, heroin, marijuana, meth, psychedelics, opioids, and unprescribed medications, among others."},
+      {term:"P.C. 1208 Firearm", body:"A weapon designed to expel a projectile via explosive, its frame/receiver, a silencer, or a destructive device."},
+      {term:"P.C. 1209 Gang", body:"3 or more people sharing a common name, sign, color, or symbol, engaged in a pattern of criminal activity."},
+      {term:"P.C. 1210 Gang Related", body:"A crime is gang-related if the suspect claims gang association, leaves gang markings, or wears gang identifiers."},
+      {term:"P.C. 1211 Government Employees", body:"Police, corrections, EMS, DOJ, SAO, Chamber of Commerce, and other public officials — whether on or off duty."},
+      {term:"P.C. 1212 Government Facility", body:"A building or location owned/operated by a government agency — PDs, prisons, military bases, city hall, courthouses, etc."},
+      {term:"P.C. 1213 Government Property", body:"Any property issued to a Government Employee — weapons, ID, vehicles, gear, equipment."},
+      {term:"P.C. 1213 Judiciary Member", body:"A State Clerk, Magistrate, Judge, or Justice employed by the San Andreas DOJ."},
+      {term:"P.C. 1214 Nonlegal Currency", body:"Currency not in official circulation, untaxed, or marked stolen — loose notes, marked bills, inked money bags, etc."},
+      {term:"P.C. 1215 Digital Asset", body:"A cryptocurrency or similar digital value substitute usable for payment, trade, or exchange."},
+      {term:"P.C. 1216 Explosive Devices", body:"Devices producing destructive gas pressure via ignition — grenades, mines, pipe bombs, sticky bombs, modified fireworks, explosive ammo."},
+      {term:"P.C. 1217 Incendiary Devices", body:"Devices producing destructive effects through combustion — flares, jerry cans, Molotovs, thermites (excludes normal lawful use of lighters/matches/flares)."},
+      {term:"P.C. 1218 Vehicle", body:"A motor vehicle, trailer, snowmobile, aircraft, or vessel equipped for propulsion by mechanical means or sail."},
+      {term:"P.C. 1219 Weapon", body:"Any firearm (loaded or not), or any object capable of producing death or serious injury as used. Classification is SACOR's discretion."},
+      {term:"P.C. 1220 Speed Limit — City/Residential", body:"50 mph."},
+      {term:"P.C. 1221 Speed Limit — Highways", body:"80 mph."},
+      {term:"P.C. 1222 Time Served", body:"Custody time counted from arrival at a government facility (after intake) toward the sentence, at the arresting officer's discretion."},
+      {term:"P.C. 1223 Aggravated", body:"The use of a deadly weapon in the circumstances of committing a crime."}
+    ]},
+    { title:"Title C — General Provisions", items:[
+      {term:"P.C. 1300 Castle Law", body:"You may defend your business, residence, or property with reasonable escalating force and have no duty to flee an aggressor there. Retaliatory force must stay lawful."},
+      {term:"P.C. 1301 Chain of Custody", body:"The last documented controller of property is responsible for its legal ramifications and must notify law enforcement if they lose control of it."},
+      {term:"P.C. 1302 Civil Forfeiture", body:"Law enforcement may seize assets suspected of being involved in crime; owners must prove innocence to recover them."},
+      {term:"P.C. 1303 Constructive Possession", body:"Having the means to control property without another's consent counts as possessing it."},
+      {term:"P.C. 1304 Depraved Indifference", body:"A reckless act causing death, committed with extreme indifference to human life, constitutes murder."},
+      {term:"P.C. 1305 Drivers License", body:"A valid license with the correct endorsements is required to operate a vehicle."},
+      {term:"P.C. 1306 Drivers License — Revocation", body:"License is revoked at 30 accumulated points; you may petition for reinstatement after 14 days. Points expire 30 days after issuance."},
+      {term:"P.C. 1307 Duty To Retreat", body:"Before claiming self-defense in a homicide, a person must do everything possible to avoid the danger first."},
+      {term:"P.C. 1308 Execution of Wills", body:"A filed will names an Executor with full authority to distribute the estate per its terms. Unfiled wills are reclaimed by the state."},
+      {term:"P.C. 1309 Felony Murder", body:"Depraved indifference is presumed if a death occurs during (or fleeing from) a robbery, arson, or kidnapping."},
+      {term:"P.C. 1310 Hot Pursuit", body:"Officers may enter a property without a warrant if people inside are in imminent danger, evidence is being destroyed, or a fleeing suspect was seen entering."},
+      {term:"P.C. 1311 Inventory Search", body:"A vehicle lawfully seized into police custody may be searched due to civil liability considerations."},
+      {term:"P.C. 1312 Investigative Hold", body:"A Capital-offense arrestee must be formally charged within 48 hours or released without bond — a Sixth Amendment speedy-trial requirement."},
+      {term:"P.C. 1313 Jeopardy", body:"Attaches once formal charges are read and the accused is given the chance to plea."},
+      {term:"P.C. 1314 Judicial Immunity", body:"A sitting Judge can't be sued civilly for official duties, only for actions taken outside their judicial capacity."},
+      {term:"P.C. 1315 One-Party Consent", body:"One party to a conversation may record it without the other parties' knowledge or consent."},
+      {term:"P.C. 1316 Pilots License", body:"Required to operate an aircraft. Title 11 felons are ineligible, and it may be revoked upon a Title 11 felony arrest. A separate Commercial Pilots License, issued by the Chamber of Commerce, authorizes for-hire flights."},
+      {term:"P.C. 1317 Pilots License — Revocation", body:"Revoked for Title 11 felonies, by judge's order, or after 5+ Title 11 infractions/misdemeanors within 90 days."},
+      {term:"P.C. 1318 Plain Sight", body:"Illegal items found outside a warrant's scope during its execution are still seizable and admissible as evidence."},
+      {term:"P.C. 1319 Prosecutorial Immunity", body:"A prosecutor acting in good faith can't be sued civilly, except for proven prosecutorial misconduct."},
+      {term:"P.C. 1320 Qualified Immunity", body:"An officer acting in good faith isn't personally liable for resulting civil damages — the state pays if proven. Must be invoked and proven in court."},
+      {term:"P.C. 1321 Right to Face and Question a Witness", body:"Affidavits can't replace live testimony except in extenuating, case-by-case circumstances."},
+      {term:"P.C. 1322 Self Defense", body:"The right to use reasonable or, in certain circumstances, deadly force to defend your own life or another's."},
+      {term:"P.C. 1323 Stop and Identify", body:"Officers with reasonable suspicion (including concealed identity) can require ID. No reasonable suspicion is needed inside a government facility or if a mask/covering is worn."},
+      {term:"P.C. 1324 Vehicle Seizure", body:"Unregistered vehicles may be seized and destroyed. Vehicles used in a felony may be impounded with escalating strikes: 1st = 3 days/$10,000, 2nd = 7 days/$20,000, 3rd = 14 days/$35,000, 4th = seized 30 days then crushed."},
+      {term:"P.C. 1325 Weapon License and the Right to Bear Arms", body:"Requires passing a safety quiz, a DNA swab, and a 3-day wait. Covers concealed carry and open carry (holstered only). Out-of-state licenses aren't recognized. Reinstatement is a DOJ judicial discretion."},
+      {term:"P.C. 1326 Weapon License — Revocation", body:"Automatically revoked upon any felony charge."},
+      {term:"P.C. 1327 Civil Evidence and Claims Limitation", body:"Monetary-damage evidence is accepted up to 30 days after the event. Claims over $50,000 per tort need judicial approval."},
+      {term:"P.C. 1328 Criminal Evidence Limitation", body:"Evidence admissibility window: Capital Offense = indefinite, Felony = 30 days, Misdemeanor = 14 days. Waivable by judicial order."},
+      {term:"P.C. 1329 Capital Charges to be Docketed Expeditiously", body:"Capital/HUT cases must be filed on the Docket within 72 hours of charges being read, or face dismissal with prejudice."}
+    ]},
+    { title:"Title D — Administrative Provisions", items:[
+      {term:"P.C. 1400 Bail", body:"A judge sets bail based on the crime and record. Types: Surety Bond (10% via a bond company), Cash Bail (paid in full, refunded if not guilty/dropped), Secured Bond Promise to Appear (50% paid upfront, weekly check-ins)."},
+      {term:"P.C. 1401 Expungement", body:"Requires 30 clean days, a DOJ filing plus fee, and judicial review, then a further 30-day sealing period before permanent sealing. Some felonies are ineligible."},
+      {term:"P.C. 1402 HIPAA", body:"Medical services must comply with law enforcement but are still bound by HIPAA. Patient condition terms: Undetermined, Good, Fair, Serious, Critical, Deceased. EMS must promptly report deaths to SASP absent a coroner."},
+      {term:"P.C. 1403 Licensing — Medical and BAR", body:"These licenses are tied to good standing with SAMS/DOJ employment."},
+      {term:"P.C. 1404 Marriage", body:"Marriage licenses are issued through the court system; all parties must appear before a judge/notary. Includes an optional name change."},
+      {term:"P.C. 1405 Name Change", body:"Filed through a lawyer with a court fee and judicial review. Limited to once per 30 days; a judge may decline the request."},
+      {term:"P.C. 1406 Pleading to Charges", body:"Not Guilty (30 days to get an attorney or a judge reviews the case), Guilty, or No Contest (accepts consequences without admitting guilt). Refusing to plea defaults to Not Guilty."},
+      {term:"P.C. 1407 Promise to Appear", body:"A Not Guilty plea obligates court appearance. Failure to appear is contempt and may trigger a warrant."},
+      {term:"P.C. 1408 Protective Orders", body:"Issued for a maximum of 90 days via an attorney plus judicial review, extendable by reappearing in court."},
+      {term:"P.C. 1409 Marijuana Exemptions", body:"Personal possession up to 30 buds, cultivation up to 6 plants, and storage up to 120 buds (plus the 30 possession buds) in one primary residence — revocable if there's evidence of sales. Commercial spaces and motels are exempt from the storage cap."},
+      {term:"P.C. 1410–1411 Fishing & Hunting Protocols", body:"The full San Andreas State Fishing and Hunting Protocols are maintained in a separate linked document."}
+    ]}
+  ]
+};
+
+function renderPenalCode(){
+  let groupsHTML = "";
+  penalCodeData.offenseGroups.forEach((group, gi) => {
+    let itemsHTML = "";
+    group.items.forEach(item => {
+      const tiersHTML = item.tiers.map(t => {
+        const labelHTML = t.label ? `<span class="pc-tier-label">${t.label}</span>` : "";
+        const ptsHTML = t.pts ? ` · ${t.pts} pts` : "";
+        return `<div class="pc-tier">${labelHTML}<span class="pc-class ${pcClassSlug(t.cls)}">${t.cls}</span><span class="pc-tier-stat">${t.months} · ${t.fine}${ptsHTML}</span></div>`;
+      }).join("");
+      const searchBlob = (item.pc + " " + item.name + " " + item.desc).toLowerCase();
+      itemsHTML += `<div class="pc-item" data-search="${searchBlob.replace(/"/g,'&quot;')}">
+        <div class="pc-item-head"><span class="pc-num">PC ${item.pc}</span><span class="pc-name">${item.name}</span></div>
+        <div class="pc-desc">${item.desc}</div>
+        <div class="pc-tiers">${tiersHTML}</div>
+      </div>`;
+    });
+    groupsHTML += `<details class="pc-group" data-kind="offense">
+      <summary>${group.title} <span class="pc-count">${group.items.length}</span></summary>
+      <div class="pc-group-body">${itemsHTML}</div>
+    </details>`;
+  });
+
+  penalCodeData.defGroups.forEach(group => {
+    let itemsHTML = "";
+    group.items.forEach(item => {
+      const searchBlob = (item.term + " " + item.body).toLowerCase();
+      itemsHTML += `<div class="pc-def" data-search="${searchBlob.replace(/"/g,'&quot;')}">
+        <div class="pc-def-term">${item.term}</div>
+        <div class="pc-def-body">${item.body}</div>
+      </div>`;
+    });
+    groupsHTML += `<details class="pc-group" data-kind="def">
+      <summary>${group.title} <span class="pc-count">${group.items.length}</span></summary>
+      <div class="pc-group-body">${itemsHTML}</div>
+    </details>`;
+  });
+
+  modalBody.innerHTML = `
+    <div class="pc-search-wrap">
+      <input type="text" class="pc-search" id="pcSearchInput" placeholder="Search by PC number, offense, or keyword…">
+    </div>
+    <div class="pc-no-results" id="pcNoResults">No matches found.</div>
+    <div id="pcGroups">${groupsHTML}</div>
+  `;
+
+  document.getElementById('pcSearchInput').addEventListener('input', e => filterPenalCode(e.target.value));
+}
+
+function filterPenalCode(query){
+  const q = query.trim().toLowerCase();
+  let anyVisible = false;
+  document.querySelectorAll('#pcGroups .pc-item, #pcGroups .pc-def').forEach(el => {
+    const text = el.dataset.search || "";
+    const match = q === "" || text.indexOf(q) !== -1;
+    el.classList.toggle('pc-row-hidden', !match);
+    if(match) anyVisible = true;
+  });
+  document.querySelectorAll('#pcGroups .pc-group').forEach(g => {
+    const visibleItems = g.querySelectorAll('.pc-item:not(.pc-row-hidden), .pc-def:not(.pc-row-hidden)');
+    if(q === ""){
+      g.open = false;
+    } else {
+      g.style.display = visibleItems.length ? "" : "none";
+      g.open = visibleItems.length > 0;
+    }
+    if(q === "") g.style.display = "";
+  });
+  document.getElementById('pcNoResults').style.display = (q !== "" && !anyVisible) ? "block" : "none";
+}
+
 </script>
 
 </body>
