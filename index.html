@@ -281,6 +281,21 @@
   @media (max-width:640px){.callout-grid{grid-template-columns:1fr;}}
 
   .quiz-progress{ font-family:'Helvetica Neue',Arial,sans-serif; font-size:12px; color:var(--gold-dim); margin-bottom:12px; letter-spacing:.03em; }
+  .quiz-progress-row{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:10px; margin-bottom:12px;
+  }
+  .quiz-progress{ font-family:'Helvetica Neue',Arial,sans-serif; font-size:12px; color:var(--gold-dim); letter-spacing:.03em; margin-bottom:0; }
+  .quiz-shuffle-btn{
+    all:unset; cursor:pointer;
+    font-family:'Helvetica Neue',Arial,sans-serif; font-size:11.5px;
+    color:var(--paper-dim);
+    border:1px solid var(--navy-line); border-radius:12px;
+    padding:5px 11px;
+    white-space:nowrap;
+    transition:border-color .12s, color .12s;
+  }
+  .quiz-shuffle-btn:hover{ color:var(--gold); border-color:var(--gold-dim); }
   .quiz-prompt{ font-size:17px; margin-bottom:14px; color:var(--paper); font-weight:600; }
   .quiz-hint-btn{
     all:unset; cursor:pointer;
@@ -975,13 +990,13 @@ const sections = {
   quizUnits:{
     title:"Unit Numbers",
     eyebrow:"Practice quiz",
-    teaser:"17 questions, incl. scenario-based, on officer/unit counting rules and response caps.",
+    teaser:"Randomized 10-question sets from a 17-question pool on officer/unit caps.",
     isQuiz:true
   },
   quizSituations:{
-    title:"Situations",
+    title:"Situations & Case Law",
     eyebrow:"Practice quiz",
-    teaser:"17 questions, incl. code-vs-code distinctions, on 10-code situations.",
+    teaser:"Randomized 10-question sets from a 27-question pool — 10-codes plus case law.",
     isQuiz:true
   }
 };
@@ -1026,8 +1041,7 @@ function openModal(id){
   modalTitle.textContent = s.title;
   modal.classList.toggle('wide', !!s.isPenalCode);
   if(s.isQuiz){
-    quizState = {quizId:id, index:0, score:0, answered:false};
-    renderQuizQuestion();
+    startQuiz(id);
   } else if(s.isPenalCode){
     renderPenalCode();
   } else {
@@ -1253,15 +1267,97 @@ const quizzes = {
       correct:"a",
       hint:"10-82 is on the situations list; 10-79 is a callout requesting a specific service.",
       explanation:"10-82 is Explosion, and 10-79 is Notify Coroner — together, the officer is reporting an explosion and asking dispatch to get the coroner involved, implying a fatality.",
-      correctFeedback:"Correct — reading combined codes like this is a real skill.", incorrectFeedback:"Not quite — break the transmission into its two codes and look each one up." }
+      correctFeedback:"Correct — reading combined codes like this is a real skill.", incorrectFeedback:"Not quite — break the transmission into its two codes and look each one up." },
+    { prompt:"Per Tennessee v. Garner, when is deadly force justified to stop a fleeing felon?",
+      options:[{id:"a",text:"Whenever the felon is armed with anything"},{id:"b",text:"Only if necessary to prevent the escape, and the officer has probable cause the suspect poses a significant threat of death or serious injury"},{id:"c",text:"Anytime the felon refuses a lawful order to stop"},{id:"d",text:"Only with a signed warrant authorizing it"}],
+      correct:"b",
+      hint:"This case sets a probable-cause-of-danger standard, not a blanket rule about fleeing felons.",
+      explanation:"Tennessee v. Garner (1985) holds that deadly force to stop a fleeing felon is only justified if necessary to prevent escape, and the officer has probable cause to believe the suspect poses a significant threat of death or serious injury to the officer or others.",
+      correctFeedback:"Correct.", incorrectFeedback:"Not quite — Garner sets a specific danger threshold, not a broad rule." },
+    { prompt:"Under Terry v. Ohio, what does an officer need before performing a pat-down frisk for weapons?",
+      options:[{id:"a",text:"A warrant"},{id:"b",text:"Reasonable suspicion — articulable facts that the person could be armed"},{id:"c",text:"Probable cause for a full arrest"},{id:"d",text:"Written consent from the person"}],
+      correct:"b",
+      hint:"This is the same standard that lets an officer briefly detain someone in the first place.",
+      explanation:"Terry v. Ohio (1968) allows a limited weapons frisk based on reasonable suspicion — articulable facts the person could be armed — without rising all the way to probable cause.",
+      correctFeedback:"Right.", incorrectFeedback:"Not quite — Terry's standard is lower than probable cause." },
+    { prompt:"Per Terry v. Ohio, how far can an officer go during a frisk before reaching inside someone's clothing?",
+      options:[{id:"a",text:"They can never reach inside clothing under any circumstances"},{id:"b",text:"They must first pat the outer garments and can only reach inside after feeling something that could be a weapon"},{id:"c",text:"They can go straight into pockets if the stop happened at night"},{id:"d",text:"A second officer must be present before any frisk begins"}],
+      correct:"b",
+      hint:"The frisk has a required order of operations — outside first.",
+      explanation:"Terry v. Ohio requires the search be limited to patting the outer garments first, and only reaching inside clothing after feeling an object that could reasonably be a weapon.",
+      correctFeedback:"That's the sequence.", incorrectFeedback:"Not quite — there's a required order to how a Terry frisk is done." },
+    { prompt:"What did Wyoming v. Houghton establish about searching a passenger's belongings in a vehicle?",
+      options:[{id:"a",text:"A passenger's container can never be searched without their personal consent"},{id:"b",text:"A warrantless search of a passenger's container isn't a Fourth Amendment violation if there's probable cause for the vehicle, under the automobile exception"},{id:"c",text:"Only the driver's belongings are ever searchable"},{id:"d",text:"Passenger belongings require a separate warrant from the vehicle itself"}],
+      correct:"b",
+      hint:"This case extends vehicle probable cause to what's inside it — including things that aren't the driver's.",
+      explanation:"Wyoming v. Houghton (1999) held that, absent exigency, a warrantless search of a passenger's container capable of holding the object of a probable-cause search is justified under the automobile exception.",
+      correctFeedback:"Exactly.", incorrectFeedback:"Not quite — the automobile exception extends beyond just the driver's own things." },
+    { prompt:"Per Miranda v. Arizona, when must Miranda warnings actually be given?",
+      options:[{id:"a",text:"Before any conversation with a police officer, always"},{id:"b",text:"Only when a person is in custody and being interrogated"},{id:"c",text:"Only once formal charges have been filed"},{id:"d",text:"Only if the person explicitly asks for a lawyer first"}],
+      correct:"b",
+      hint:"Both conditions — not being free to leave, and being questioned — have to be present together.",
+      explanation:"Miranda v. Arizona (1966) requires the warning only when a person is in custody (an arrest or equivalent deprivation of freedom) AND being interrogated (questioned in a way meant to elicit an incriminating response).",
+      correctFeedback:"Correct.", incorrectFeedback:"Not quite — it's specifically the combination of custody and interrogation." },
+    { prompt:"What does Carroll v. U.S. allow officers to do?",
+      options:[{id:"a",text:"Search any parked vehicle at any time, no justification needed"},{id:"b",text:"Conduct a warrantless search of a vehicle stopped in traffic if there's probable cause it contains contraband or evidence"},{id:"c",text:"Search a vehicle only after towing it to an impound lot"},{id:"d",text:"Hold a vehicle indefinitely pending a judge's review"}],
+      correct:"b",
+      hint:"This is the foundational case behind the 'automobile exception' to the warrant requirement.",
+      explanation:"Carroll v. U.S. (1925) permits a warrantless vehicle search during a traffic stop when there's probable cause to believe it contains contraband or evidence.",
+      correctFeedback:"Right.", incorrectFeedback:"Not quite — the key trigger is probable cause during a stop, not any parked vehicle." },
+    { prompt:"According to Pennsylvania v. Mimms, does ordering a driver out of the car during a traffic stop violate the Fourth Amendment?",
+      options:[{id:"a",text:"Yes, it always requires separate justification"},{id:"b",text:"No — it doesn't violate the Fourth Amendment, though a pat-down still needs Terry-level suspicion the person is armed and dangerous"},{id:"c",text:"Only if the stop lasts longer than 10 minutes"},{id:"d",text:"Only with the driver's verbal consent"}],
+      correct:"b",
+      hint:"This case is about the order to exit the vehicle specifically — not about searching them once they're out.",
+      explanation:"Pennsylvania v. Mimms (1977) holds that ordering someone out of a car following a traffic stop doesn't violate the Fourth Amendment. Terry v. Ohio still applies on top of it — any pat-down still needs its own reasonable suspicion.",
+      correctFeedback:"Correct.", incorrectFeedback:"Not quite — the exit order and the frisk are governed by two different standards." },
+    { prompt:"Per Maryland v. King, when is a DNA cheek swab considered a legal booking procedure comparable to fingerprinting?",
+      options:[{id:"a",text:"For any arrest, regardless of the charge"},{id:"b",text:"Only when charging the arrestee with a violent crime"},{id:"c",text:"Only with a separate court order obtained after booking"},{id:"d",text:"Only for repeat offenders with a prior felony"}],
+      correct:"b",
+      hint:"The case narrows this specifically by the type of crime being charged.",
+      explanation:"Maryland v. King (2013) held that a cheek swab is comparable to fingerprinting as a reasonable booking procedure under the Fourth Amendment, but only when charging the arrestee with a violent crime.",
+      correctFeedback:"That's the limitation.", incorrectFeedback:"Not quite — this ruling is narrower than 'any arrest.'" },
+    { prompt:"What did De-Luca v. State of San Andreas (2023) recognize, given how quickly Los Santos arraignments and pleas tend to happen?",
+      options:[{id:"a",text:"A right to a full jury trial for every offense"},{id:"b",text:"A 'delayed death' exception to double jeopardy, to protect due process within compressed timelines"},{id:"c",text:"A ban on plea deals within the first hour of arrest"},{id:"d",text:"An automatic right to bail for all charges"}],
+      correct:"b",
+      hint:"This ruling exists specifically because charges and pleas can happen minutes after an arrest.",
+      explanation:"De-Luca v. State of San Andreas (2023) acknowledges a 'delayed death' exception to double jeopardy, recognizing that Los Santos's compressed arraignment-to-plea timeline still needs to safeguard due process.",
+      correctFeedback:"Correct.", incorrectFeedback:"Not quite — this case is about protecting due process despite fast-moving pleas." },
+    { prompt:"What does Brady v. Maryland require of the prosecution?",
+      options:[{id:"a",text:"Nothing specific regarding evidence disclosure"},{id:"b",text:"That withholding evidence material to a defendant's guilt or punishment violates their right to due process"},{id:"c",text:"That all physical evidence be destroyed once a case closes"},{id:"d",text:"That only eyewitness testimony can be used at trial"}],
+      correct:"b",
+      hint:"This case is the foundation of the prosecution's duty to disclose evidence favorable to the defense.",
+      explanation:"Brady v. Maryland (1963) holds that the government withholding evidence material to guilt or punishment violates the defendant's constitutional right to due process.",
+      correctFeedback:"Correct.", incorrectFeedback:"Not quite — Brady is specifically about the duty to disclose material evidence." }
   ]
 };
 
-let quizState = {quizId:null, index:0, score:0, answered:false};
+let quizState = {quizId:null, questions:[], index:0, score:0, answered:false};
+const QUIZ_SESSION_SIZE = 10;
+
+function shuffleArray(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildQuizSession(quizId){
+  const pool = quizzes[quizId];
+  const sessionSize = Math.min(QUIZ_SESSION_SIZE, pool.length);
+  const picked = shuffleArray(pool).slice(0, sessionSize);
+  return picked.map(q => Object.assign({}, q, { options: shuffleArray(q.options) }));
+}
+
+function startQuiz(quizId){
+  quizState = { quizId, questions: buildQuizSession(quizId), index:0, score:0, answered:false };
+  renderQuizQuestion();
+}
 
 function quizScoreMessage(score, total, quizId){
   const pct = score / total;
-  const topic = quizId === 'quizUnits' ? "Criminal Activities & Response" : "10-Codes";
+  const topic = quizId === 'quizUnits' ? "Criminal Activities & Response" : "10-Codes and Case Law";
   if(pct === 1) return "Perfect score — you know this cold.";
   if(pct >= 0.75) return "Solid work — a couple worth a second look.";
   if(pct >= 0.5) return `Halfway there — review ${topic}.`;
@@ -1269,30 +1365,36 @@ function quizScoreMessage(score, total, quizId){
 }
 
 function renderQuizQuestion(){
-  const questions = quizzes[quizState.quizId];
+  const questions = quizState.questions;
   const total = questions.length;
   if(quizState.index >= total){
     modalBody.innerHTML = `
       <div class="quiz-score">
         <div class="big">${quizState.score} / ${total}</div>
         <p style="color:var(--paper-dim);">${quizScoreMessage(quizState.score, total, quizState.quizId)}</p>
-        <button class="quiz-btn" id="quizRetry">Try Again</button>
+        <button class="quiz-btn" id="quizRetry">🔀 New Questions</button>
       </div>
     `;
     document.getElementById('quizRetry').addEventListener('click', () => {
-      quizState = {quizId:quizState.quizId, index:0, score:0, answered:false};
-      renderQuizQuestion();
+      startQuiz(quizState.quizId);
     });
     return;
   }
 
   const q = questions[quizState.index];
   modalBody.innerHTML = `
-    <div class="quiz-progress">Question ${quizState.index + 1} of ${total} · Score: ${quizState.score}</div>
+    <div class="quiz-progress-row">
+      <div class="quiz-progress">Question ${quizState.index + 1} of ${total} · Score: ${quizState.score}</div>
+      <button class="quiz-shuffle-btn" id="quizShuffleBtn" title="Get a new random set of questions">🔀 New Questions</button>
+    </div>
     <div class="quiz-prompt">${q.prompt}</div>
     ${q.hint ? `<button class="quiz-hint-btn" id="quizHintBtn">Show hint</button><div class="quiz-hint-text" id="quizHintText" style="display:none;">${q.hint}</div>` : ''}
     <div id="quizOptions"></div>
   `;
+
+  document.getElementById('quizShuffleBtn').addEventListener('click', () => {
+    startQuiz(quizState.quizId);
+  });
 
   const optionsEl = document.getElementById('quizOptions');
   q.options.forEach(opt => {
@@ -1314,7 +1416,7 @@ function renderQuizQuestion(){
 function selectQuizOption(optId){
   if(quizState.answered) return;
   quizState.answered = true;
-  const q = quizzes[quizState.quizId][quizState.index];
+  const q = quizState.questions[quizState.index];
   const correct = optId === q.correct;
   if(correct) quizState.score++;
 
@@ -1332,7 +1434,7 @@ function selectQuizOption(optId){
   feedback.innerHTML = `<strong>${correct ? (q.correctFeedback || 'Correct.') : (q.incorrectFeedback || 'Not quite.')}</strong> ${q.explanation}`;
   document.getElementById('quizOptions').after(feedback);
 
-  const isLast = quizState.index === quizzes[quizState.quizId].length - 1;
+  const isLast = quizState.index === quizState.questions.length - 1;
   const nav = document.createElement('div');
   nav.className = 'quiz-nav';
   const nextBtn = document.createElement('button');
