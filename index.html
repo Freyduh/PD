@@ -508,6 +508,65 @@
   .pc-def-body{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--ink-dim); max-width:72ch; }
   .pc-row-hidden{ display:none !important; }
 
+  /* ===== Radio Call Practice ===== */
+  .callsign-select{
+    display:grid; grid-template-columns:repeat(2, 1fr); gap:8px;
+    margin:10px 0 16px;
+  }
+  .callsign-btn{
+    all:unset; cursor:pointer; box-sizing:border-box; text-align:center;
+    padding:12px 8px;
+    border:1px solid var(--line-bright); border-radius:9px;
+    background:var(--panel-2); color:var(--ink);
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px; letter-spacing:.02em;
+    transition:border-color .12s, box-shadow .12s, background .12s, transform .12s;
+  }
+  .callsign-btn:hover{ transform:translateY(-1px); border-color:var(--cyan); }
+  .callsign-btn.active{
+    border-color:var(--cyan); background:var(--panel-3); color:var(--cyan);
+    box-shadow:0 0 16px rgba(41,224,255,.35);
+  }
+  .radio-label{
+    display:block; font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:600;
+    text-transform:uppercase; letter-spacing:.05em; color:var(--ink-dim); margin-bottom:6px;
+  }
+  .radio-input{
+    width:100%; box-sizing:border-box;
+    padding:11px 14px; border-radius:8px;
+    border:1px solid var(--line-bright);
+    background:var(--panel-2); color:var(--ink);
+    font-family:'IBM Plex Mono',monospace; font-size:13.5px;
+    margin:10px 0 16px;
+    transition:border-color .12s, box-shadow .12s;
+  }
+  .radio-input::placeholder{ color:var(--ink-faint); }
+  .radio-input:focus{ outline:none; border-color:var(--cyan); box-shadow:0 0 12px rgba(41,224,255,.2); }
+  .radio-input:disabled{ opacity:.55; }
+  .radio-callcard{
+    display:inline-block;
+    font-family:'IBM Plex Mono',monospace; font-size:12.5px;
+    color:var(--ink-dim);
+    background:var(--panel-2); border:1px solid var(--line);
+    border-radius:6px; padding:6px 12px; margin-bottom:14px;
+  }
+  .radio-callcard strong{ color:var(--cyan); }
+  .radio-check-rows{ display:flex; flex-wrap:wrap; gap:8px 16px; margin:10px 0 2px; }
+  .radio-check-row{ font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; }
+  .radio-check-row.ok{ color:var(--green); }
+  .radio-check-row.bad{ color:var(--red); }
+  .radio-model-answer{
+    margin-top:8px; font-family:'IBM Plex Mono',monospace; font-size:12.5px;
+    color:var(--cyan); font-style:italic;
+  }
+  .radio-banner{
+    display:inline-block;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase;
+    padding:5px 14px; border-radius:20px; margin-bottom:10px;
+  }
+  .radio-banner.pass{ color:var(--green); background:var(--green-dim); border:1px solid rgba(56,230,168,.4); box-shadow:0 0 14px rgba(56,230,168,.2); }
+  .radio-banner.fail{ color:var(--red); background:var(--red-dim); border:1px solid rgba(255,77,109,.4); box-shadow:0 0 14px rgba(255,77,109,.2); }
+
   .caselaw-card{
     background:var(--panel-2);
     border:1px solid var(--line);
@@ -725,7 +784,7 @@ const groups = [
   { title:"Enforcement & Custody", items:["crime","cleanup","gang","suspects","warrants"] },
   { title:"Quick Reference", items:["codes","caselaw"] },
   { title:"Legal Code", items:["penalcode"] },
-  { title:"Practice", items:["quizUnits","quizCaselaw","quizCodes"] }
+  { title:"Practice", items:["quizUnits","quizCaselaw","quizCodes","radioDrill"] }
 ];
 
 const sections = {
@@ -1263,6 +1322,12 @@ const sections = {
     eyebrow:"Practice quiz",
     teaser:"Randomized 10-question sets covering the callout codes, Code 0–10, and Signals.",
     isQuiz:true
+  },
+  radioDrill:{
+    title:"Radio Call Practice",
+    eyebrow:"Fill-in drill",
+    teaser:"Type the exact transmission for each scenario — two mistakes and the whole run resets.",
+    isRadioDrill:true
   }
 };
 
@@ -1311,6 +1376,8 @@ function openModal(id){
     renderQuizHome(id);
   } else if(s.isPenalCode){
     renderPenalCode();
+  } else if(s.isRadioDrill){
+    renderRadioHome();
   } else {
     modalBody.innerHTML = s.body;
   }
@@ -3305,6 +3372,292 @@ function filterPenalCode(query){
     if(q === "") g.style.display = "";
   });
   document.getElementById('pcNoResults').style.display = (q !== "" && !anyVisible) ? "block" : "none";
+}
+
+/* ===== Radio Call Practice (fill-in drill, gauntlet mode) ===== */
+const RADIO_DRILL = [
+  { scenario:"Dispatch puts out a robbery call at the Fleeca on Vinewood. You're already in your cruiser and start driving toward it.", callNumber:"4471", code:"76",
+    hint:"You haven't arrived yet — you're just heading that way.", explanation:"10-76 is Enroute — used the moment you start heading toward an active call." },
+  { scenario:"You pull up outside the Fleeca and park, ready to move in on that same robbery call.", callNumber:"4471", code:"23",
+    hint:"You've physically arrived at the location.", explanation:"10-23 is On Scene — confirming you've arrived." },
+  { scenario:"The Fleeca call wraps up and you're clear to take new calls again.", callNumber:"4471", code:"8",
+    hint:"You're available for new calls again.", explanation:"10-8 is In Service." },
+  { scenario:"Your sergeant asks you to relocate patrol to the south side of the map. It isn't tied to any active call, but dispatch tags the move with a reference number anyway.", callNumber:"0012", code:"76",
+    hint:"Movement gets the same code whether or not it's tied to an active call.", explanation:"10-76 (Enroute) covers any time you're moving — toward a call or just repositioning — always paired with whatever reference number dispatch is using." },
+  { scenario:"Your shift just started and you need to let dispatch know you're on the clock.", callNumber:null, code:"41", needsCallNumber:false,
+    hint:"This one isn't tied to any call at all.", explanation:"10-41 is Beginning Tour of Duty — no call number needed." },
+  { scenario:"Your shift is over and you're heading home.", callNumber:null, code:"42", needsCallNumber:false,
+    hint:"Same deal as starting shift — no call number.", explanation:"10-42 is Ending Tour of Duty." },
+  { scenario:"Another unit's transmission got cut off and you didn't catch it. You need them to say it again.", callNumber:"7765", code:"9",
+    hint:"You're asking for a repeat, not confirming signal quality.", explanation:"10-9 is Repeat Last Transmission." },
+  { scenario:"Your radio keeps cutting out and you need dispatch to relay a message to Air-1 for you.", callNumber:"7765", code:"5",
+    hint:"You need a middleman to pass the message along.", explanation:"10-5 is Relay Message." },
+  { scenario:"You spot a grey Sultan driving erratically and decide to pull it over for a routine stop.", callNumber:"3390", code:"11",
+    hint:"This is the code for calling in the stop itself.", explanation:"10-11 is Routine Traffic Stop." },
+  { scenario:"Mid-stop, you run the driver's name to check their license status.", callNumber:"3390", code:"27",
+    hint:"This one's checked by name.", explanation:"10-27 is Driver's License Info." },
+  { scenario:"You also run the plate on the vehicle you just stopped.", callNumber:"3390", code:"28",
+    hint:"This one's checked by plate, not name.", explanation:"10-28 is Vehicle Registration." },
+  { scenario:"The name the driver gave you doesn't check out, so you run a check for any active warrants.", callNumber:"3390", code:"29",
+    hint:"It's the code right after Vehicle Registration.", explanation:"10-29 is Check for Warrants." },
+  { scenario:"A cadet is riding along with you today and you want dispatch to know there's a non-officer in the car.", callNumber:"1120", code:"12",
+    hint:"This flags a non-officer passenger.", explanation:"10-12 is Ride Along." },
+  { scenario:"You finish processing out in Sandy Shores and head back toward Mission Row.", callNumber:"1120", code:"19",
+    hint:"This one covers heading back somewhere specific.", explanation:"10-19 is Return to ___." },
+  { scenario:"Dispatch asks where you currently are during the active robbery call.", callNumber:"4471", code:"20",
+    hint:"They're asking for your position.", explanation:"10-20 is Location." },
+  { scenario:"A call comes in but turns out to be a false alarm — you want it cancelled.", callNumber:"4471", code:"22",
+    hint:"This means cancel or ignore the call.", explanation:"10-22 is Disregard." },
+  { scenario:"Command wants every available unit to report to the Vinewood substation for a briefing.", callNumber:"0099", code:"25",
+    hint:"This tells units where to go, not that they've arrived.", explanation:"10-25 is Report To." },
+  { scenario:"There's a flat-tire call on the Palomino Highway and you're the one assisting the stranded motorist.", callNumber:"5521", code:"46",
+    hint:"You're helping a civilian driver, not fixing the road.", explanation:"10-46 is Assist Motorist." },
+  { scenario:"Debris is blocking two lanes of the freeway and you need it cleared.", callNumber:"5521", code:"47",
+    hint:"This is about the roadway itself, not a specific vehicle.", explanation:"10-47 is Emergency Road Repair." },
+  { scenario:"A vehicle's totaled after a crash and needs to be towed.", callNumber:"5521", code:"51",
+    hint:"This is the code for the vehicle, not the person.", explanation:"10-51 is Request for Tow." },
+  { scenario:"Someone's been shot in the leg and you need fire/ambulance out here immediately.", callNumber:"6610", code:"52",
+    hint:"This is the code for the person, not the vehicle.", explanation:"10-52 is Request for Fire/Ambulance." },
+  { scenario:"A suspect is headed toward the Del Perro Bridge, so you set up to intercept them there specifically.", callNumber:"6610", code:"53",
+    hint:"This names one specific location, not a full shutdown.", explanation:"10-53 is Road Block at ___." },
+  { scenario:"Traffic's backed up badly at Legion Square and you need someone to manually wave cars through.", callNumber:"2234", code:"58",
+    hint:"This is about keeping cars moving, not stopping them.", explanation:"10-58 is Direct Traffic." },
+  { scenario:"You're escorting the bank truck from Pacific Standard to Fleeca.", callNumber:"3301", code:"59",
+    hint:"This covers coordinated, protected movement.", explanation:"10-59 is Convoy/Escort." },
+  { scenario:"You're currently talking face-to-face with the registered owner of a reported stolen vehicle.", callNumber:"8842", code:"75",
+    hint:"This is about who you're currently speaking with.", explanation:"10-75 is In Contact With ___." },
+  { scenario:"A unit needs backup, but it's not urgent — just whenever someone's free.", callNumber:"6610", code:"77",
+    hint:"This is the non-urgent version of a backup request.", explanation:"10-77 is Need Additional Unit – Not Urgent." },
+  { scenario:"Shots are being fired and you need backup right now.", callNumber:"6610", code:"78",
+    hint:"This is the urgent version of a backup request.", explanation:"10-78 is Need Additional Unit – URGENT." },
+  { scenario:"There's a fatality on scene and the coroner needs to be notified.", callNumber:"6610", code:"79",
+    hint:"The person is already gone — EMS isn't who you need now.", explanation:"10-79 is Notify Coroner." },
+  { scenario:"A suspect vehicle fails to yield and takes off northbound on the freeway.", callNumber:"9015", code:"80",
+    hint:"This covers a vehicle or foot pursuit.", explanation:"10-80 is Pursuit of Vehicle/Foot." },
+  { scenario:"DOC needs to come collect a compliant, already-detained prisoner.", callNumber:"9015", code:"91",
+    hint:"This is the routine pickup code, not the high-risk one.", explanation:"10-91 is Pick Up Prisoner." },
+  { scenario:"You're sealing off an entire freeway on-ramp so nobody gets through.", callNumber:"9015", code:"93",
+    hint:"This is a full shutdown, not a single named location.", explanation:"10-93 is Blockade." },
+  { scenario:"The suspect's cuffed and you're transporting them in.", callNumber:"9015", code:"95",
+    hint:"This marks custody, once they're cuffed.", explanation:"10-95 is Suspect in Custody." },
+  { scenario:"Dispatch wants a basic radio check to confirm you're receiving clearly.", callNumber:"0001", code:"97",
+    hint:"This is just a plain radio check.", explanation:"10-97 is Test Signal." },
+  { scenario:"You're acknowledging that you copy dispatch's last message.", callNumber:"4471", code:"4",
+    hint:"This is a simple confirmation.", explanation:"10-4 is Affirmative." },
+  { scenario:"You're dealing with a suspect and can only be reached if it's urgent.", callNumber:"4471", code:"6",
+    hint:"This is a middle ground between available and unavailable.", explanation:"10-6 is Busy Unless Urgent." },
+  { scenario:"You're heading out of service, off the air, back to the station.", callNumber:"4471", code:"7",
+    hint:"This is the opposite of going back on patrol.", explanation:"10-7 is Out of Service." },
+  { scenario:"You need to switch the whole channel over to Tac 3.", callNumber:"4471", code:"1",
+    hint:"This is the first callout code on the sheet.", explanation:"10-1 is Frequency Change." },
+  { scenario:"Dispatch's signal is coming through loud and clear, and you want to confirm that.", callNumber:"4471", code:"2",
+    hint:"This confirms signal quality, not message content.", explanation:"10-2 is Signal Good." },
+  { scenario:"There's an active pursuit and dispatch needs the channel cleared of all other chatter.", callNumber:"9015", code:"3",
+    hint:"This clears the channel for something urgent.", explanation:"10-3 is Stop Transmitting." },
+  { scenario:"During a shootout, one of your fellow officers goes down and it's critical.", callNumber:"7712", code:"13A",
+    hint:"The 'A' suffix always means urgent — and the person down is an officer.", explanation:"10-13A is Officer Down / URGENT." },
+  { scenario:"An officer takes a minor hit during a scuffle — not life-threatening, but worth flagging.", callNumber:"7712", code:"13B",
+    hint:"Same situation type as before, but the 'B' suffix means not urgent.", explanation:"10-13B is Officer Down / Not Urgent." },
+  { scenario:"During a shootout, your medic gets hit while treating officers right next to you — the medic is the one who's down, not an officer.", callNumber:"7712", code:"14A",
+    hint:"Read carefully — who's actually injured here, the officer or the medic?", explanation:"10-14A is Medic Down / URGENT. Even though officers are standing right there, the person actually hurt is the medic, so it's 10-14A — not 10-13A, which is reserved for an officer being the one down." },
+  { scenario:"A medic takes a graze during a scene, but it's not serious.", callNumber:"7712", code:"14B",
+    hint:"Same situation as before, but not urgent this time.", explanation:"10-14B is Medic Down / Not Urgent." },
+  { scenario:"Gunshots are reported in the area and you're calling it in as you approach.", callNumber:"2250", code:"60",
+    hint:"This reports what's happening, not your travel status.", explanation:"10-60 is Gunshots." },
+  { scenario:"You spot an active robbery in progress and call it in.", callNumber:"2250", code:"90",
+    hint:"This is the general code for a robbery in progress.", explanation:"10-90 is Robbery." }
+];
+
+
+const RADIO_CALLSIGN_KEY = 'sasp_radio_callsign_v1';
+const RADIO_BEST_KEY = 'sasp_radio_best_v1';
+function loadRadioCallsign(){
+  try{ return localStorage.getItem(RADIO_CALLSIGN_KEY) || ''; }catch(e){ return ''; }
+}
+function saveRadioCallsign(v){
+  try{ localStorage.setItem(RADIO_CALLSIGN_KEY, v); }catch(e){}
+}
+function loadRadioBestMap(){
+  try{ const raw = localStorage.getItem(RADIO_BEST_KEY); return raw ? JSON.parse(raw) : {}; }catch(e){ return {}; }
+}
+function loadRadioBest(callsign){
+  const map = loadRadioBestMap();
+  return (callsign && map[callsign] !== undefined) ? map[callsign] : null;
+}
+function saveRadioBest(callsign, pct){
+  try{
+    const map = loadRadioBestMap();
+    if(map[callsign] === undefined || pct > map[callsign]){
+      map[callsign] = pct;
+      localStorage.setItem(RADIO_BEST_KEY, JSON.stringify(map));
+    }
+  }catch(e){}
+}
+
+function cleanToken(t){
+  return t.replace(/[^\w-]/g, '').toLowerCase();
+}
+function tokenize(input){
+  return input.split(/\s+/).map(cleanToken).filter(Boolean);
+}
+function tokenMatchesCode(token, code){
+  const c = code.toLowerCase();
+  if(token === c) return true;
+  if(token === '10-' + c) return true;
+  if(token === '10' + c) return true;
+  return false;
+}
+
+function buildModelAnswer(q, callsign){
+  const codeStr = '10-' + q.code;
+  if(q.needsCallNumber === false){
+    return `${callsign}, ${codeStr}.`;
+  }
+  return `${callsign}, ${codeStr}, last ${q.callNumber}.`;
+}
+
+let radioState = {callsign:'', pool:[], index:0, score:0, wrongCount:0, attempted:0, failed:false, answered:false};
+
+const RADIO_CALLSIGN_OPTIONS = ['767', '522'];
+
+function renderRadioHome(){
+  const saved = RADIO_CALLSIGN_OPTIONS.includes(loadRadioCallsign()) ? loadRadioCallsign() : RADIO_CALLSIGN_OPTIONS[0];
+  const best = loadRadioBest(saved);
+  modalBody.innerHTML = `
+    <p class="small-note" style="margin-top:0;">Each scenario describes a situation. Type the full transmission the way you'd actually say it over the radio — callsign, code, and call number. Two wrong answers in a run and the whole set resets from question one.</p>
+    <label class="radio-label">Who's running the drill?</label>
+    <div class="callsign-select" id="callsignSelect">
+      ${RADIO_CALLSIGN_OPTIONS.map(cs => `<button class="callsign-btn ${cs === saved ? 'active' : ''}" data-cs="${cs}">${cs}</button>`).join('')}
+    </div>
+    ${best !== null ? `<p class="small-note">Best clean run for ${saved}: <strong style="color:var(--green);">${best}%</strong></p>` : ''}
+    <div class="quiz-home-actions">
+      <button class="quiz-btn" id="radioStartBtn">▶ Start drill (${RADIO_DRILL.length} scenarios)</button>
+    </div>
+  `;
+  document.querySelectorAll('#callsignSelect .callsign-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      saveRadioCallsign(btn.getAttribute('data-cs'));
+      renderRadioHome();
+    });
+  });
+  document.getElementById('radioStartBtn').addEventListener('click', () => {
+    startRadioDrill(saved);
+  });
+}
+
+function startRadioDrill(callsign){
+  radioState = {
+    callsign,
+    pool: shuffleArray(RADIO_DRILL),
+    index: 0,
+    score: 0,
+    wrongCount: 0,
+    attempted: 0,
+    failed: false,
+    answered: false
+  };
+  renderRadioQuestion();
+}
+
+function renderRadioResults(){
+  const attempted = radioState.attempted;
+  const pct = attempted ? Math.round((radioState.score / attempted) * 100) : 0;
+  const passed = !radioState.failed;
+  if(passed) saveRadioBest(radioState.callsign, pct);
+  modalBody.innerHTML = `
+    <div class="quiz-score">
+      <div class="radio-banner ${passed ? 'pass' : 'fail'}">${passed ? '✓ CLEAN RUN' : '✕ CHANNEL RESET'}</div>
+      <div class="big">${radioState.score} / ${attempted}</div>
+      <p style="color:var(--ink-dim);">${pct}% correct${passed ? ' — full set completed with ' + radioState.wrongCount + ' miss' + (radioState.wrongCount===1?'':'es') + '.' : ' — two wrong answers, run stopped at question ' + attempted + ' of ' + radioState.pool.length + '.'}</p>
+    </div>
+    <div class="quiz-nav" style="justify-content:space-between;">
+      <button class="quiz-btn secondary" id="radioExitBtn">Exit</button>
+      <button class="quiz-btn" id="radioRetryBtn">${passed ? 'Run it again' : 'Try again from the top'}</button>
+    </div>
+  `;
+  document.getElementById('radioExitBtn').addEventListener('click', () => renderRadioHome());
+  document.getElementById('radioRetryBtn').addEventListener('click', () => startRadioDrill(radioState.callsign));
+}
+
+function renderRadioQuestion(){
+  if(radioState.failed || radioState.index >= radioState.pool.length){
+    renderRadioResults();
+    return;
+  }
+  const q = radioState.pool[radioState.index];
+  radioState.answered = false;
+  const qNum = String(radioState.index + 1).padStart(2, '0');
+  modalBody.innerHTML = `
+    <div class="quiz-progress-row">
+      <div class="quiz-progress"><span class="quiz-qnum">Q${qNum}</span> / ${String(radioState.pool.length).padStart(2,'0')} &nbsp;·&nbsp; Score ${radioState.score} &nbsp;·&nbsp; Misses ${radioState.wrongCount}/2</div>
+      <button class="quiz-shuffle-btn" id="radioExitMidBtn" title="Stop and exit">↩ Stop</button>
+    </div>
+    <div class="quiz-prompt">${q.scenario}</div>
+    ${q.needsCallNumber === false ? '' : `<div class="radio-callcard">Call # on record: <strong>${q.callNumber}</strong></div>`}
+    <button class="quiz-hint-btn" id="radioHintBtn">Show hint</button>
+    <div class="quiz-hint-text" id="radioHintText" style="display:none;">${q.hint}</div>
+    <input type="text" id="radioAnswerInput" class="radio-input" placeholder="Type exactly what you'd say over the radio..." autocomplete="off">
+    <div class="quiz-nav">
+      <button class="quiz-btn" id="radioSubmitBtn">Submit transmission</button>
+    </div>
+  `;
+  document.getElementById('radioExitMidBtn').addEventListener('click', () => renderRadioHome());
+  document.getElementById('radioHintBtn').addEventListener('click', () => {
+    const t = document.getElementById('radioHintText');
+    t.style.display = t.style.display === 'none' ? 'block' : 'none';
+  });
+  const input = document.getElementById('radioAnswerInput');
+  input.focus();
+  input.addEventListener('keydown', e => { if(e.key === 'Enter') submitRadioAnswer(); });
+  document.getElementById('radioSubmitBtn').addEventListener('click', submitRadioAnswer);
+}
+
+function submitRadioAnswer(){
+  if(radioState.answered) return;
+  const q = radioState.pool[radioState.index];
+  const raw = document.getElementById('radioAnswerInput').value || '';
+  const tokens = tokenize(raw);
+  const codeOk = tokens.some(t => tokenMatchesCode(t, q.code));
+  const callNumberOk = q.needsCallNumber === false ? true : tokens.includes(cleanToken(q.callNumber));
+  const callsignOk = raw.toLowerCase().includes(radioState.callsign.toLowerCase());
+  const correct = codeOk && callNumberOk && callsignOk;
+
+  radioState.answered = true;
+  radioState.attempted++;
+  if(correct){
+    radioState.score++;
+  } else {
+    radioState.wrongCount++;
+    if(radioState.wrongCount >= 2) radioState.failed = true;
+  }
+
+  const modelAnswer = buildModelAnswer(q, radioState.callsign);
+  const rows = [
+    { label:'Callsign', ok: callsignOk },
+    { label:'Code', ok: codeOk },
+  ];
+  if(q.needsCallNumber !== false) rows.push({ label:'Call number', ok: callNumberOk });
+
+  const feedback = document.createElement('div');
+  feedback.className = 'quiz-feedback' + (correct ? '' : ' wrong');
+  feedback.innerHTML = `
+    <strong>${correct ? 'Correct.' : 'Not quite.'}</strong> ${q.explanation}
+    <div class="radio-check-rows">
+      ${rows.map(r => `<span class="radio-check-row ${r.ok ? 'ok' : 'bad'}">${r.ok ? '✓' : '✗'} ${r.label}</span>`).join('')}
+    </div>
+    <div class="radio-model-answer">Model: "${modelAnswer}"</div>
+  `;
+  document.getElementById('radioAnswerInput').disabled = true;
+  document.getElementById('radioAnswerInput').after(feedback);
+
+  const submitBtn = document.getElementById('radioSubmitBtn');
+  const isLastInRun = radioState.failed || radioState.index === radioState.pool.length - 1;
+  submitBtn.textContent = isLastInRun ? 'See results' : 'Next scenario';
+  submitBtn.replaceWith(submitBtn.cloneNode(true));
+  document.getElementById('radioSubmitBtn').addEventListener('click', () => {
+    radioState.index++;
+    renderRadioQuestion();
+  });
 }
 
 </script>
